@@ -1,7 +1,7 @@
 /* global SelfieSegmentation, Pose */
 
 /*
-  DIGITALER RAUM
+  ONE OF THE SIDES
 
   This project first creates a stable camera + body segmentation prototype.
   On top of that, it draws a living monochrome digital space driven by
@@ -30,14 +30,47 @@ const SHOW_STATUS_PANEL = true;
 
 // Landing page controls. These affect only the pre-camera exhibition screen
 // and stop running before the camera performance begins.
-const LANDING_ARTIFACT_COUNT = 128;
-const LANDING_ARTIFACT_OPACITY = 0.16;
-const LANDING_ARTIFACT_SPEED = 0.00018;
-const LANDING_POINTER_RADIUS = 150;
-const LANDING_POINTER_FORCE = 18;
-const LANDING_TRANSITION_DURATION = 2600;
-const LANDING_TRANSITION_CAMERA_DELAY = 1800;
+const LANDING_ARTIFACT_COUNT = 5;
+const LANDING_INVITATION_FRAGMENT_COUNT = 5;
+const LANDING_ARTIFACT_OPACITY = 0.105;
+const LANDING_ARTIFACT_SPEED = 0.82;
+const LANDING_POINTER_RADIUS = 172;
+const LANDING_POINTER_FORCE = 520;
+const LANDING_EDGE_BOUNCE = 0.58;
+const LANDING_COLLISION_STRENGTH = 0.3;
+const LANDING_FRAGMENT_CLICK_RADIUS = 52;
+const LANDING_FRAGMENT_REAPPEAR_DELAY = 1900;
+const LANDING_FRAGMENT_SHARD_LIFETIME = 1450;
+const LANDING_CRACK_LIFETIME = 12000;
+const LANDING_PRESSURE_LIFETIME = 1600;
+const LANDING_CRACK_DEPTH = 1.0;
+const LANDING_CRACK_CHIP = 1.15;
+const LANDING_CRACK_BREATHING_SPEED = 0.00062;
+const LANDING_MAJOR_CRACK_LIMIT = 5;
+const LANDING_HOVER_CRACK_LIMIT = 3;
+const LANDING_NEGATIVE_RAY_CHANCE = 0.52;
+const LANDING_COLLAPSE_PULL_STRENGTH = 1.55;
+const LANDING_CURSOR_DAMAGE_INTERVAL = 185;
+const LANDING_BUTTON_DAMAGE_RADIUS = 240;
+const LANDING_LETTER_EXPULSION_DELAY = 520;
+const LANDING_LETTER_IMPACT_FORCE = 2200;
+const LANDING_LETTER_BOUNCE = 0.46;
+const LANDING_NEGATIVE_GLOW = 0.42;
+const LANDING_TRANSITION_DURATION = 6800;
+const LANDING_TRANSITION_CAMERA_DELAY = 8000;
 const LANDING_TRANSITION_INTENSITY = 1.0;
+const LANDING_FINAL_COLLAPSE_START = 0.64;
+const LANDING_FINAL_DARKNESS_START = 0.78;
+const LANDING_FINAL_DARKNESS = 0.96;
+const LANDING_SURFACE_FRAGMENT_AMOUNT = 150;
+const LANDING_SINGULARITY_START = 0.82;
+const LANDING_SINGULARITY_HOLD_START = 0.94;
+const LANDING_CAMERA_REVEAL_DURATION = 3400;
+const LANDING_BLACK_SHELL_CELL_SIZE = 74;
+const LANDING_BLACK_SHELL_OVERLAP = 10;
+const LANDING_BLACK_SHELL_RESISTANCE = 0.42;
+const LANDING_BLACK_SHELL_GRAVITY = 320;
+const LANDING_BLACK_SHELL_EDGE_STRESS = 0.025;
 
 // Timing values are in milliseconds. 1000 = 1 second.
 const START_TRANSFORMATION_TIME = 3000;
@@ -149,6 +182,7 @@ const landingCtx = landingCanvas ? landingCanvas.getContext("2d") : null;
 const landingTitle = document.getElementById("landingTitle");
 const startButton = document.getElementById("startButton");
 const startMessage = document.getElementById("startMessage");
+const cameraChoiceButtons = Array.from(document.querySelectorAll("[data-camera-choice]"));
 const statePanel = document.getElementById("statePanel");
 const stageLabel = document.getElementById("stageLabel");
 const bodyLabel = document.getElementById("bodyLabel");
@@ -211,8 +245,25 @@ let landingHasStartedCamera = false;
 let landingPointerX = -9999;
 let landingPointerY = -9999;
 let landingPointerActiveUntil = 0;
+let landingLastFrameAt = 0;
+let landingButtonDamage = 0;
+let landingLastCrackAt = 0;
+let landingLettersSeeded = false;
+let landingCollapseOpened = false;
+let landingSurfaceCollapseSeeded = false;
+let landingCameraRevealStartTime = 0;
+let landingRevealCompleted = false;
+let landingFractureRayTarget = 0;
+let landingFractureRaysCreated = 0;
 
 const landingArtifacts = [];
+const landingCracks = [];
+const landingPressures = [];
+const landingNegativeRays = [];
+const landingSurfacePieces = [];
+const landingBlackShellPieces = [];
+const landingFragmentShards = [];
+const landingLetterBodies = [];
 const trailFragments = [];
 
 const MANUAL_STAGE_PROGRESS = {
@@ -297,13 +348,20 @@ const STRUCTURE_LANDMARKS = [
 // -----------------------------------------------------------------------------
 
 statePanel.hidden = !SHOW_STATUS_PANEL;
+if (bodyLabel) bodyLabel.hidden = true;
 setupLandingTitle();
+setupCameraChoice();
 resizeRenderer();
 resizeLandingCanvas();
 drawEmptyScreen();
 startLandingAnimation();
+updateStatusText("Waiting for presence...", "");
 
 startButton.addEventListener("click", beginLandingTransition);
+startButton.addEventListener("pointerenter", handleStartButtonTouch, { passive: true });
+startButton.addEventListener("pointermove", handleStartButtonTouch, { passive: true });
+startButton.addEventListener("pointerdown", handleStartButtonTouch, { passive: true });
+startButton.addEventListener("pointerleave", clearStartButtonTouch, { passive: true });
 switchCameraButton.addEventListener("click", switchCamera);
 window.addEventListener("resize", handleViewportResize);
 window.addEventListener("orientationchange", () => window.setTimeout(handleViewportResize, 250));
@@ -329,12 +387,36 @@ function setupLandingTitle() {
   if (!landingTitle) return;
 
   const letters = landingTitle.querySelectorAll(".title-letter");
-  letters.forEach((letter, index) => {
-    const seed = hash1(index, 901);
-    letter.style.setProperty("--fail-x", ((seed - 0.5) * 26) + "px");
-    letter.style.setProperty("--fail-y", ((hash1(index, 902) - 0.5) * 18) + "px");
-    letter.style.setProperty("--fail-r", ((hash1(index, 903) - 0.5) * 5) + "deg");
-    letter.style.setProperty("--fail-o", String(lerp(0.62, 0.95, hash1(index, 904))));
+  letters.forEach((letter) => {
+    letter.style.setProperty("--fail-x", "0px");
+    letter.style.setProperty("--fail-y", "0px");
+    letter.style.setProperty("--fail-r", "0deg");
+    letter.style.setProperty("--fail-o", "0.9");
+    letter.style.setProperty("--live-x", "0px");
+    letter.style.setProperty("--live-y", "0px");
+    letter.style.setProperty("--live-r", "0deg");
+  });
+}
+
+function setupCameraChoice() {
+  if (!cameraChoiceButtons.length) return;
+
+  cameraChoiceButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      selectCameraFacingMode(button.dataset.cameraChoice || CAMERA_FACING_MODE);
+    });
+  });
+
+  selectCameraFacingMode(cameraFacingMode);
+}
+
+function selectCameraFacingMode(facingMode) {
+  cameraFacingMode = facingMode === "user" ? "user" : "environment";
+
+  cameraChoiceButtons.forEach((button) => {
+    const isSelected = button.dataset.cameraChoice === cameraFacingMode;
+    button.classList.toggle("is-selected", isSelected);
+    button.setAttribute("aria-pressed", isSelected ? "true" : "false");
   });
 }
 
@@ -352,23 +434,56 @@ function resizeLandingCanvas() {
   landingCanvas.width = nextWidth;
   landingCanvas.height = nextHeight;
   landingCtx.imageSmoothingEnabled = false;
+  landingLastFrameAt = 0;
   createLandingArtifacts();
 }
 
 function createLandingArtifacts() {
   landingArtifacts.length = 0;
+  landingCracks.length = 0;
+  landingPressures.length = 0;
+  landingNegativeRays.length = 0;
+  landingSurfacePieces.length = 0;
+  landingBlackShellPieces.length = 0;
+  landingFragmentShards.length = 0;
+  landingLetterBodies.length = 0;
+  landingLettersSeeded = false;
+  landingCollapseOpened = false;
+  landingSurfaceCollapseSeeded = false;
+  landingCameraRevealStartTime = 0;
+  landingRevealCompleted = false;
+  landingFractureRayTarget = 0;
+  landingFractureRaysCreated = 0;
 
   if (!landingCanvas) return;
 
+  const pixelRatio = landingCanvas.width / Math.max(1, window.innerWidth || 1);
+
   for (let i = 0; i < LANDING_ARTIFACT_COUNT; i += 1) {
+    const angle = hash1(i, 914) * Math.PI * 2;
+    const isInvitation = i < LANDING_INVITATION_FRAGMENT_COUNT;
+    const speed = (isInvitation ? lerp(1.2, 4.8, hash1(i, 915)) : lerp(2.2, 12, hash1(i, 915))) * LANDING_ARTIFACT_SPEED * pixelRatio;
+    const margin = isInvitation ? 0.18 : 0;
+
     landingArtifacts.push({
-      x: hash1(i, 911) * landingCanvas.width,
-      y: hash1(i, 912) * landingCanvas.height,
-      size: lerp(1, 5, hash1(i, 913)),
-      length: lerp(8, 42, hash1(i, 914)),
-      type: hash1(i, 915),
-      seed: hash1(i, 916),
-      drift: lerp(0.35, 1.8, hash1(i, 917))
+      x: lerp(landingCanvas.width * margin, landingCanvas.width * (1 - margin), hash1(i, 911)),
+      y: lerp(landingCanvas.height * margin, landingCanvas.height * (1 - margin), hash1(i, 912)),
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      size: (isInvitation ? lerp(6, 25, hash1(i, 913)) : lerp(1, 4.6, hash1(i, 913))) * pixelRatio,
+      length: (isInvitation ? lerp(14, 76, hash1(i, 916)) : lerp(10, 54, hash1(i, 916))) * pixelRatio,
+      type: hash1(i, 917),
+      seed: hash1(i, 918),
+      mass: isInvitation ? lerp(4.5, 8.5, hash1(i, 919)) : lerp(0.85, 5.2, hash1(i, 919)),
+      rotation: hash1(i, 920) * Math.PI * 2,
+      rotationVelocity: isInvitation ? lerp(-0.035, 0.035, hash1(i, 921)) : lerp(-0.16, 0.16, hash1(i, 921)),
+      damage: 0,
+      invitation: isInvitation,
+      active: true,
+      spawnedAt: performance.now(),
+      reappearsAt: 0,
+      reactionCooldownUntil: 0,
+      impactCooldown: 0
     });
   }
 }
@@ -379,7 +494,7 @@ function startLandingAnimation() {
   const draw = (now) => {
     drawLandingFrame(now);
 
-    if (!isRunning && !startPanel.classList.contains("is-hidden")) {
+    if (!startPanel.classList.contains("is-hidden")) {
       landingAnimationId = window.requestAnimationFrame(draw);
     } else {
       landingAnimationId = 0;
@@ -402,62 +517,438 @@ function drawLandingFrame(now) {
   const transitionProgress = landingIsTransitioning
     ? smoothstep(0, LANDING_TRANSITION_DURATION, now - landingTransitionStart)
     : 0;
+  const dt = landingLastFrameAt ? Math.min(0.05, Math.max(0.001, (now - landingLastFrameAt) / 1000)) : 1 / 60;
   const pointerActive = now < landingPointerActiveUntil;
   const pixelRatio = landingCanvas.width / Math.max(1, window.innerWidth || 1);
   const pointerX = landingPointerX * pixelRatio;
   const pointerY = landingPointerY * pixelRatio;
 
+  landingLastFrameAt = now;
+  landingButtonDamage = Math.max(0, landingButtonDamage - dt * 0.38);
+
+  updateStartOriginHoverRays(now);
+  updateLandingPressures(now);
+  updateLandingNegativeRays(now, transitionProgress, pixelRatio);
+  updateLandingSurfacePieces(now, transitionProgress, pixelRatio);
+  updateLandingFractureGeneration(now, transitionProgress, pixelRatio);
+  updateLandingArtifacts(now, dt, transitionProgress, pixelRatio, pointerActive, pointerX, pointerY);
+  updateLandingFragmentShards(now, dt);
+  updateLandingLetterBodies(now, dt, transitionProgress, pixelRatio);
+  resolveLandingArtifactCollisions(pixelRatio);
+  pruneLandingCracks(now);
+
   landingCtx.clearRect(0, 0, landingCanvas.width, landingCanvas.height);
 
+  if (landingCameraRevealStartTime) {
+    drawLandingCameraReveal(now, pixelRatio);
+    completeLandingCameraReveal(now);
+    return;
+  }
+
+  drawLandingPressures(now, pixelRatio, transitionProgress);
+  drawLandingNegativeRays(now, pixelRatio, transitionProgress);
+  drawLandingCracks(now, pixelRatio, transitionProgress, true);
+  drawLandingCollapseDarkness(now, pixelRatio, transitionProgress);
+  drawLandingSurfacePieces(now, pixelRatio, transitionProgress);
+  if (transitionProgress < LANDING_SINGULARITY_START) {
+    drawLandingArtifacts(now, pixelRatio, transitionProgress);
+    drawLandingFragmentShards(now, pixelRatio, transitionProgress);
+  }
+  drawLandingCracks(now, pixelRatio, transitionProgress, false);
+  drawLandingSingularity(now, pixelRatio, transitionProgress);
+  drawLandingCameraReveal(now, pixelRatio);
+  completeLandingCameraReveal(now);
+
+  if (!pointerActive && !landingIsTransitioning) {
+    relaxLandingTitle();
+  }
+}
+
+function updateLandingArtifacts(now, dt, transitionProgress, pixelRatio, pointerActive, pointerX, pointerY) {
+  const width = landingCanvas.width;
+  const height = landingCanvas.height;
+  const maxDistance = Math.hypot(width, height);
+  const collapseSource = getElementCanvasCenter(startButton) || { x: width * 0.5, y: height * 0.56 };
+  const buttonRadius = LANDING_BUTTON_DAMAGE_RADIUS * pixelRatio;
+
   landingArtifacts.forEach((artifact, index) => {
-    const wave = Math.sin(now * LANDING_ARTIFACT_SPEED * artifact.drift + artifact.seed * 40);
-    const rebuild = 0.5 + 0.5 * Math.sin(now * LANDING_ARTIFACT_SPEED * 2.1 + artifact.seed * 70);
-    let x = artifact.x + wave * 4;
-    let y = artifact.y + Math.cos(now * LANDING_ARTIFACT_SPEED * artifact.drift + artifact.seed * 20) * 4;
-    let alpha = LANDING_ARTIFACT_OPACITY * lerp(0.28, 1, rebuild);
-    let size = artifact.size;
+    if (artifact.invitation && !artifact.active) {
+      if (!landingIsTransitioning && now >= artifact.reappearsAt) {
+        respawnLandingFragment(artifact, now, pixelRatio, width, height);
+      }
+      return;
+    }
+
+    const slowWave = now * 0.00012 * LANDING_ARTIFACT_SPEED + artifact.seed * 30;
+    artifact.vx += Math.cos(slowWave) * 2.1 * pixelRatio * dt / artifact.mass;
+    artifact.vy += Math.sin(slowWave * 0.8 + artifact.seed * 9) * 1.8 * pixelRatio * dt / artifact.mass;
 
     if (pointerActive) {
-      const dx = x - pointerX;
-      const dy = y - pointerY;
-      const distance = Math.hypot(dx, dy);
+      applyLandingRepulsion(artifact, pointerX, pointerY, LANDING_POINTER_RADIUS * pixelRatio, LANDING_POINTER_FORCE * pixelRatio, dt);
+    }
 
-      if (distance < LANDING_POINTER_RADIUS * pixelRatio) {
-        const force = 1 - distance / (LANDING_POINTER_RADIUS * pixelRatio);
-        const angle = Math.atan2(dy, dx);
-        x += Math.cos(angle) * LANDING_POINTER_FORCE * force * pixelRatio;
-        y += Math.sin(angle) * LANDING_POINTER_FORCE * force * pixelRatio;
-        alpha += force * 0.12;
-        size += force * 2;
-      }
+    if (landingButtonDamage > 0.001) {
+      applyLandingRepulsion(artifact, collapseSource.x, collapseSource.y, buttonRadius, LANDING_POINTER_FORCE * 0.34 * pixelRatio * landingButtonDamage, dt);
     }
 
     if (transitionProgress > 0) {
-      const direction = hash1(index, 918) * Math.PI * 2;
-      const fracture = Math.pow(transitionProgress, 1.45) * LANDING_TRANSITION_INTENSITY;
-      x += Math.cos(direction) * fracture * lerp(18, 130, hash1(index, 919)) * pixelRatio;
-      y += Math.sin(direction) * fracture * lerp(12, 88, hash1(index, 920)) * pixelRatio;
-      alpha = Math.min(0.42, alpha + fracture * 0.22);
-      size *= lerp(1, 2.8, fracture);
+      const dx = artifact.x - collapseSource.x;
+      const dy = artifact.y - collapseSource.y;
+      const distance = Math.hypot(dx, dy);
+      const travellingCollapse = smoothstep(0, 1, transitionProgress * 1.22 - distance / maxDistance * 0.64);
+      const force = LANDING_POINTER_FORCE * 1.2 * pixelRatio * travellingCollapse * LANDING_TRANSITION_INTENSITY;
+
+      if (distance > 0.001) {
+        artifact.vx += (dx / distance) * force * dt / artifact.mass;
+        artifact.vy += (dy / distance) * force * dt / artifact.mass;
+      }
+
+      artifact.rotationVelocity += (hash1(index, 965) - 0.5) * travellingCollapse * dt * 1.25;
+      artifact.damage = Math.max(artifact.damage, travellingCollapse * 0.82);
     }
 
-    const tone = Math.round(lerp(18, 154, artifact.seed));
-    landingCtx.fillStyle = grey(tone, alpha);
-    landingCtx.strokeStyle = grey(tone, alpha * 0.72);
-    landingCtx.lineWidth = Math.max(1, pixelRatio * 0.65);
+    artifact.damage = Math.max(0, artifact.damage - dt * 0.22);
+    artifact.rotation += artifact.rotationVelocity * dt;
+    artifact.rotationVelocity *= Math.pow(0.986, dt * 60);
+    artifact.vx *= Math.pow(0.99, dt * 60);
+    artifact.vy *= Math.pow(0.99, dt * 60);
+    artifact.x += artifact.vx * dt;
+    artifact.y += artifact.vy * dt;
+    artifact.impactCooldown = Math.max(0, artifact.impactCooldown - dt);
+
+    bounceLandingArtifactFromEdges(artifact, now, pixelRatio, width, height);
+  });
+}
+
+function applyLandingRepulsion(artifact, sourceX, sourceY, radius, force, dt) {
+  const dx = artifact.x - sourceX;
+  const dy = artifact.y - sourceY;
+  const distance = Math.hypot(dx, dy);
+
+  if (distance <= 0.001 || distance >= radius) return;
+
+  const pressure = Math.pow(1 - distance / radius, 2.15);
+  artifact.vx += (dx / distance) * force * pressure * dt / artifact.mass;
+  artifact.vy += (dy / distance) * force * pressure * dt / artifact.mass;
+  artifact.rotationVelocity += (hash1(Math.round(artifact.seed * 1000), 950) - 0.5) * pressure * dt * 1.7;
+  artifact.damage = Math.max(artifact.damage, pressure * 0.62);
+}
+
+function respawnLandingFragment(artifact, now, pixelRatio, width, height) {
+  const margin = 0.16;
+  const seed = Math.random();
+  const angle = seed * Math.PI * 2;
+
+  artifact.x = lerp(width * margin, width * (1 - margin), Math.random());
+  artifact.y = lerp(height * margin, height * (1 - margin), Math.random());
+  artifact.vx = Math.cos(angle) * lerp(1.2, 4.6, Math.random()) * LANDING_ARTIFACT_SPEED * pixelRatio;
+  artifact.vy = Math.sin(angle) * lerp(1.2, 4.6, Math.random()) * LANDING_ARTIFACT_SPEED * pixelRatio;
+  artifact.rotationVelocity = lerp(-0.035, 0.035, Math.random());
+  artifact.rotation = Math.random() * Math.PI * 2;
+  artifact.damage = 0;
+  artifact.active = true;
+  artifact.spawnedAt = now;
+  artifact.reappearsAt = 0;
+  artifact.reactionCooldownUntil = now + 900;
+}
+
+function deactivateLandingFragment(artifact, now, delayMultiplier = 1) {
+  artifact.active = false;
+  artifact.damage = 0;
+  artifact.reappearsAt = now + LANDING_FRAGMENT_REAPPEAR_DELAY * lerp(0.75, 1.5, Math.random()) * delayMultiplier;
+  artifact.vx = 0;
+  artifact.vy = 0;
+  artifact.rotationVelocity = 0;
+}
+
+function reactToLandingFragment(artifact, now, pixelRatio, reason = "click") {
+  if (!artifact.invitation || !artifact.active || landingIsTransitioning || now < artifact.reactionCooldownUntil) return false;
+
+  const roll = Math.random();
+  const isLarge = artifact.size > 17 * pixelRatio || artifact.length > 48 * pixelRatio;
+
+  if (roll < 0.38) {
+    shatterLandingFragment(artifact, now, pixelRatio, reason, isLarge ? 5 : 3);
+  } else if (roll < 0.7) {
+    absorbLandingFragment(artifact, now, pixelRatio);
+  } else {
+    splitLandingFragment(artifact, now, pixelRatio, isLarge ? 3 : 2);
+  }
+
+  deactivateLandingFragment(artifact, now, reason === "edge" ? 0.85 : 1);
+  return true;
+}
+
+function shatterLandingFragment(artifact, now, pixelRatio, reason, count) {
+  for (let i = 0; i < count; i += 1) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = reason === "edge" ? lerp(24, 92, Math.random()) : lerp(10, 54, Math.random());
+
+    landingFragmentShards.push({
+      type: "shatter",
+      x: artifact.x,
+      y: artifact.y,
+      vx: Math.cos(angle) * speed * pixelRatio,
+      vy: Math.sin(angle) * speed * pixelRatio,
+      size: artifact.size * lerp(0.16, 0.34, Math.random()),
+      rotation: artifact.rotation + Math.random(),
+      spin: lerp(-1.2, 1.2, Math.random()),
+      createdAt: now,
+      life: LANDING_FRAGMENT_SHARD_LIFETIME * lerp(0.52, 1.05, Math.random()),
+      tone: lerp(18, 78, Math.random()),
+      alpha: lerp(0.045, 0.12, Math.random())
+    });
+  }
+}
+
+function absorbLandingFragment(artifact, now, pixelRatio) {
+  const count = 2 + Math.floor(Math.random() * 3);
+
+  for (let i = 0; i < count; i += 1) {
+    const angle = Math.random() * Math.PI * 2;
+    const distance = lerp(4, 26, Math.random()) * pixelRatio;
+
+    landingFragmentShards.push({
+      type: "absorb",
+      x: artifact.x + Math.cos(angle) * distance,
+      y: artifact.y + Math.sin(angle) * distance,
+      targetX: artifact.x + (Math.random() - 0.5) * 5 * pixelRatio,
+      targetY: artifact.y + (Math.random() - 0.5) * 5 * pixelRatio,
+      vx: 0,
+      vy: 0,
+      size: artifact.size * lerp(0.12, 0.42, Math.random()),
+      rotation: artifact.rotation + Math.random(),
+      spin: lerp(-0.35, 0.35, Math.random()),
+      createdAt: now,
+      life: LANDING_FRAGMENT_SHARD_LIFETIME * lerp(0.6, 0.95, Math.random()),
+      tone: lerp(8, 58, Math.random()),
+      alpha: lerp(0.04, 0.1, Math.random())
+    });
+  }
+}
+
+function splitLandingFragment(artifact, now, pixelRatio, count) {
+  for (let i = 0; i < count; i += 1) {
+    const angle = artifact.rotation + (i / count) * Math.PI * 2 + (Math.random() - 0.5) * 0.8;
+    const speed = lerp(8, 32, Math.random()) * pixelRatio;
+
+    landingFragmentShards.push({
+      type: "split",
+      x: artifact.x,
+      y: artifact.y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      size: artifact.size * lerp(0.34, 0.58, Math.random()),
+      rotation: artifact.rotation + Math.random() * 0.5,
+      spin: lerp(-0.5, 0.5, Math.random()),
+      createdAt: now,
+      life: LANDING_FRAGMENT_SHARD_LIFETIME * lerp(0.78, 1.25, Math.random()),
+      tone: lerp(22, 72, Math.random()),
+      alpha: lerp(0.05, 0.12, Math.random())
+    });
+  }
+}
+
+function resolveLandingArtifactCollisions(pixelRatio) {
+  const limit = Math.min(landingArtifacts.length, 56);
+
+  for (let i = 0; i < limit; i += 1) {
+    const a = landingArtifacts[i];
+    if (a.invitation && !a.active) continue;
+
+    for (let j = i + 1; j < limit; j += 1) {
+      const b = landingArtifacts[j];
+      if (b.invitation && !b.active) continue;
+      const minDistance = (a.size + b.size) * lerp(1.4, 2.8, Math.max(a.seed, b.seed));
+      const dx = b.x - a.x;
+      const dy = b.y - a.y;
+      const distance = Math.hypot(dx, dy);
+
+      if (distance <= 0.001 || distance >= minDistance) continue;
+
+      const push = (minDistance - distance) * LANDING_COLLISION_STRENGTH;
+      const nx = dx / distance;
+      const ny = dy / distance;
+      const aShare = b.mass / (a.mass + b.mass);
+      const bShare = a.mass / (a.mass + b.mass);
+
+      a.x -= nx * push * aShare;
+      a.y -= ny * push * aShare;
+      b.x += nx * push * bShare;
+      b.y += ny * push * bShare;
+      a.vx -= nx * push * 3.2 * pixelRatio * aShare;
+      a.vy -= ny * push * 3.2 * pixelRatio * aShare;
+      b.vx += nx * push * 3.2 * pixelRatio * bShare;
+      b.vy += ny * push * 3.2 * pixelRatio * bShare;
+      a.damage = Math.max(a.damage, 0.06);
+      b.damage = Math.max(b.damage, 0.06);
+    }
+  }
+}
+
+function bounceLandingArtifactFromEdges(artifact, now, pixelRatio, width, height) {
+  let impactX = null;
+  let impactY = null;
+
+  if (artifact.x < 0) {
+    artifact.x = 0;
+    artifact.vx = Math.abs(artifact.vx) * LANDING_EDGE_BOUNCE;
+    impactX = 0;
+    impactY = artifact.y;
+  } else if (artifact.x > width) {
+    artifact.x = width;
+    artifact.vx = -Math.abs(artifact.vx) * LANDING_EDGE_BOUNCE;
+    impactX = width;
+    impactY = artifact.y;
+  }
+
+  if (artifact.y < 0) {
+    artifact.y = 0;
+    artifact.vy = Math.abs(artifact.vy) * LANDING_EDGE_BOUNCE;
+    impactX = artifact.x;
+    impactY = 0;
+  } else if (artifact.y > height) {
+    artifact.y = height;
+    artifact.vy = -Math.abs(artifact.vy) * LANDING_EDGE_BOUNCE;
+    impactX = artifact.x;
+    impactY = height;
+  }
+
+  const impact = Math.hypot(artifact.vx, artifact.vy);
+  const fractureIsAllowed = landingIsTransitioning || landingButtonDamage > 0.45;
+
+  if (impactX !== null && impact > 34 * pixelRatio && artifact.impactCooldown <= 0) {
+    if (artifact.invitation && !landingIsTransitioning) {
+      const behavior = Math.random();
+
+      if (behavior < 0.34) {
+        reactToLandingFragment(artifact, now, pixelRatio, "edge");
+        return;
+      }
+
+      if (behavior < 0.55) {
+        deactivateLandingFragment(artifact, now, 0.9);
+        return;
+      }
+    }
+
+    artifact.damage = Math.max(artifact.damage, 0.18);
+
+    if (fractureIsAllowed && Math.random() < 0.16) {
+      const strength = lerp(0.16, 0.42, Math.min(1, impact / (230 * pixelRatio)));
+      createLandingPressure(impactX, impactY, strength, now, 180, true);
+    }
+
+    artifact.impactCooldown = 1.05;
+  }
+}
+
+function drawLandingArtifacts(now, pixelRatio, transitionProgress) {
+  landingArtifacts.forEach((artifact, index) => {
+    if (artifact.invitation && !artifact.active) return;
+
+    const rebuild = 0.5 + 0.5 * Math.sin(now * 0.00022 * LANDING_ARTIFACT_SPEED + artifact.seed * 70);
+    const damage = Math.max(artifact.damage, transitionProgress * 0.32);
+    const invitationAlpha = artifact.invitation ? 0.045 + rebuild * 0.055 : 0;
+    const appear = artifact.invitation ? smoothstep(0, 1400, now - artifact.spawnedAt) : 1;
+    const alpha = artifact.invitation
+      ? (invitationAlpha + damage * 0.08) * appear
+      : LANDING_ARTIFACT_OPACITY * lerp(0.24, 1, rebuild) + damage * 0.11;
+    const tone = artifact.invitation
+      ? Math.round(lerp(28, 72, artifact.seed))
+      : Math.round(lerp(14, 120, artifact.seed) * lerp(1, 0.5, transitionProgress));
+    const size = artifact.size * lerp(0.78, 1.55, damage);
+
+    landingCtx.save();
+    landingCtx.translate(artifact.x, artifact.y);
+    landingCtx.rotate(artifact.rotation);
+    landingCtx.fillStyle = grey(tone, Math.min(artifact.invitation ? 0.16 : 0.4, alpha));
+    landingCtx.strokeStyle = grey(tone, Math.min(artifact.invitation ? 0.1 : 0.28, alpha * 0.72));
+    landingCtx.lineWidth = Math.max(1, pixelRatio * 0.7);
 
     if (artifact.type < 0.48) {
-      landingCtx.fillRect(x, y, size * pixelRatio, size * pixelRatio);
-    } else if (artifact.type < 0.78) {
+      landingCtx.fillRect(-size * 0.5, -size * 0.5, size, size);
+    } else if (artifact.type < 0.76) {
       landingCtx.beginPath();
-      landingCtx.moveTo(x, y);
-      landingCtx.lineTo(x + artifact.length * pixelRatio * lerp(0.3, 1, rebuild), y + wave * pixelRatio * 3);
+      landingCtx.moveTo(-artifact.length * 0.5 * lerp(0.2, 0.82, rebuild), 0);
+      landingCtx.lineTo(artifact.length * 0.5 * lerp(0.35, 1, rebuild), (artifact.seed - 0.5) * 5 * pixelRatio);
       landingCtx.stroke();
     } else {
-      makeLandingPolygonPath(landingCtx, x, y, size * pixelRatio * 1.6, 3 + Math.floor(artifact.seed * 3), artifact.seed + now * 0.00003);
+      makeLandingPolygonPath(landingCtx, 0, 0, size * (artifact.invitation ? 0.95 : 1.3), 3 + Math.floor(artifact.seed * 3), artifact.seed + now * 0.00003);
       landingCtx.fill();
+      if (artifact.invitation) landingCtx.stroke();
     }
+
+    if (damage > 0.36) {
+      const splitCount = Math.floor(1 + damage * 2.2);
+
+      for (let split = 0; split < splitCount; split += 1) {
+        const splitSeed = hash2(index, split, 971);
+        const angle = splitSeed * Math.PI * 2;
+        const distance = size * lerp(1.2, 3.6, damage) * lerp(0.45, 1, hash2(index, split, 972));
+        const splitSize = size * lerp(0.18, 0.38, hash2(index, split, 973));
+
+        landingCtx.save();
+        landingCtx.translate(Math.cos(angle) * distance, Math.sin(angle) * distance);
+        landingCtx.rotate(-artifact.rotation * 0.55 + splitSeed * Math.PI);
+        landingCtx.globalAlpha = Math.min(0.42, damage);
+        landingCtx.fillRect(-splitSize * 0.5, -splitSize * 0.5, splitSize, splitSize * lerp(0.35, 1.25, splitSeed));
+        landingCtx.restore();
+      }
+    }
+
+    landingCtx.restore();
   });
+}
+
+function updateLandingFragmentShards(now, dt) {
+  for (let i = landingFragmentShards.length - 1; i >= 0; i -= 1) {
+    const shard = landingFragmentShards[i];
+    const age = clamp((now - shard.createdAt) / shard.life, 0, 1);
+
+    if (shard.type === "absorb") {
+      const pull = smoothstep(0, 0.9, age);
+      shard.x = lerp(shard.x, shard.targetX, 0.06 + pull * 0.18);
+      shard.y = lerp(shard.y, shard.targetY, 0.06 + pull * 0.18);
+      shard.size *= lerp(0.992, 0.95, pull);
+    } else {
+      const drag = shard.type === "split" ? 0.982 : 0.965;
+      shard.vx *= Math.pow(drag, dt * 60);
+      shard.vy *= Math.pow(drag, dt * 60);
+      shard.x += shard.vx * dt;
+      shard.y += shard.vy * dt;
+    }
+
+    shard.rotation += shard.spin * dt;
+
+    if (age >= 1) landingFragmentShards.splice(i, 1);
+  }
+
+  while (landingFragmentShards.length > 24) {
+    landingFragmentShards.shift();
+  }
+}
+
+function drawLandingFragmentShards(now, pixelRatio, transitionProgress) {
+  if (!landingFragmentShards.length || transitionProgress > 0) return;
+
+  landingCtx.save();
+  landingFragmentShards.forEach((shard) => {
+    const age = clamp((now - shard.createdAt) / shard.life, 0, 1);
+    const fade = smoothstep(0, 0.18, age) * (1 - smoothstep(0.62, 1, age));
+    const size = shard.size * (shard.type === "absorb" ? lerp(1, 0.08, age) : lerp(1, 0.42, smoothstep(0.5, 1, age)));
+
+    if (fade <= 0.001 || size <= 0.2) return;
+
+    landingCtx.save();
+    landingCtx.translate(shard.x, shard.y);
+    landingCtx.rotate(shard.rotation);
+    landingCtx.fillStyle = grey(shard.tone, shard.alpha * fade);
+    makeLandingPolygonPath(landingCtx, 0, 0, size, shard.type === "split" ? 3 : 4, shard.rotation);
+    landingCtx.fill();
+    landingCtx.restore();
+  });
+  landingCtx.restore();
 }
 
 function makeLandingPolygonPath(targetCtx, x, y, radius, sides, rotation) {
@@ -475,25 +966,1255 @@ function makeLandingPolygonPath(targetCtx, x, y, radius, sides, rotation) {
   targetCtx.closePath();
 }
 
+function updateLandingFractureGeneration(now, transitionProgress, pixelRatio) {
+  if (!landingIsTransitioning) return;
+
+  const interval = lerp(980, 540, transitionProgress);
+
+  if (now - landingLastCrackAt < interval) return;
+
+  const openMajorCrackCount = landingCracks.filter((crack) => crack.mode === "collapse").length;
+  const pendingMajorCrackCount = landingPressures.filter((pressure) => pressure.mode === "collapse" && pressure.opens && !pressure.cracked).length;
+  const majorCrackCount = openMajorCrackCount + pendingMajorCrackCount;
+  if (majorCrackCount >= LANDING_MAJOR_CRACK_LIMIT) return;
+
+  const origin = getLandingCollapseOrigin();
+  if (!origin) return;
+
+  landingLastCrackAt = now;
+
+  const delay = majorCrackCount === 0 ? 260 : 130;
+  const strength = lerp(0.58, 0.98, transitionProgress);
+  createLandingPressure(origin.x, origin.y, strength, now, delay, true, "collapse", majorCrackCount);
+}
+
+function getLandingCollapseOrigin() {
+  const buttonCenter = getElementCanvasCenter(startButton);
+
+  if (buttonCenter) return buttonCenter;
+
+  return {
+    x: landingCanvas.width * 0.5,
+    y: landingCanvas.height * 0.58
+  };
+}
+
+function getActiveStartOriginHoverRay() {
+  return landingPressures.find((pressure) => (
+    pressure.mode === "start-ray"
+    && pressure.directionIndex === 0
+    && pressure.rays
+    && pressure.rays.length > 0
+    && !pressure.cracked
+    && !pressure.releasedAt
+  ));
+}
+
+function updateStartOriginHoverRays(now) {
+  const center = getElementCanvasCenter(startButton);
+  const hoverIntensity = getStartOriginHoverIntensity(now, center);
+  const isHoveringStart = hoverIntensity > 0.04;
+  const activeRay = getActiveStartOriginHoverRay();
+
+  if (isHoveringStart && center) {
+    if (activeRay) {
+      activeRay.x = center.x;
+      activeRay.y = center.y;
+      activeRay.strength = lerp(0.22, 0.78, hoverIntensity);
+      activeRay.hoverIntensity = hoverIntensity;
+      activeRay.lastHoveredAt = now;
+      if (hoverIntensity > 0.68 && activeRay.rays.length < 2 && now - activeRay.createdAt > 260) {
+        activeRay.rays.push(createStartOriginRay(true, activeRay.rays.length));
+      }
+      return;
+    }
+
+    createLandingPressure(center.x, center.y, lerp(0.22, 0.78, hoverIntensity), now, 1500, false, "start-ray", 0);
+    return;
+  }
+
+  landingPressures.forEach((pressure) => {
+    if (pressure.mode === "start-ray" && !pressure.releasedAt) {
+      pressure.releasedAt = now;
+    }
+  });
+}
+
+function getStartOriginHoverIntensity(now, center) {
+  if (landingIsTransitioning || !center || !landingCanvas || now > landingPointerActiveUntil) return 0;
+
+  const rect = getElementCanvasRect(startButton);
+  if (!rect) return 0;
+
+  const pixelRatio = landingCanvas.width / Math.max(1, window.innerWidth || 1);
+  const pointerX = landingPointerX * pixelRatio;
+  const pointerY = landingPointerY * pixelRatio;
+  const distance = Math.hypot(pointerX - center.x, pointerY - center.y);
+  const directRadius = Math.max(rect.width, rect.height) * 0.68 + 10 * pixelRatio;
+  const approachRadius = Math.max(rect.width, rect.height) * 2.8 + 120 * pixelRatio;
+  const proximity = 1 - smoothstep(directRadius, approachRadius, distance);
+
+  return clamp(Math.max(startPanel.classList.contains("is-button-touched") ? 1 : 0, proximity), 0, 1);
+}
+
+function createStartOriginRay(isDirect, index = 0) {
+  return {
+    angle: Math.random() * Math.PI * 2,
+    length: lerp(isDirect ? 138 : 86, isDirect ? 390 : 275, Math.random()) * (index === 0 ? 1 : lerp(0.42, 0.72, Math.random())),
+    width: lerp(isDirect ? 12 : 8, isDirect ? 32 : 24, Math.random()),
+    bend: lerp(-0.12, 0.12, Math.random()),
+    delay: lerp(0, 0.12, Math.random()),
+    seed: Math.random()
+  };
+}
+
+function createLandingPressure(x, y, strength, now = performance.now(), delay = 340, opens = true, mode = "hover", directionIndex = null) {
+  if (!landingCanvas) return;
+
+  const isStartHoverRayOrigin = mode === "start-ray" && directionIndex === 0 && !landingIsTransitioning;
+  const hoverIntensity = isStartHoverRayOrigin ? clamp((strength - 0.22) / 0.56, 0, 1) : 0;
+  const rayRoll = Math.random();
+  const rayCount = isStartHoverRayOrigin ? (rayRoll < (hoverIntensity > 0.68 ? 0.46 : 0.82) ? 1 : 2) : 0;
+  const rays = Array.from({ length: rayCount }, (_, index) => createStartOriginRay(hoverIntensity > 0.68, index));
+
+  landingPressures.push({
+    x,
+    y,
+    strength: clamp(strength, 0.04, 1.2),
+    createdAt: now,
+    crackAt: now + delay,
+    life: LANDING_PRESSURE_LIFETIME * lerp(0.9, 1.7, Math.random()),
+    cracked: false,
+    opens,
+    mode,
+    directionIndex,
+    angle: Math.random() * Math.PI * 2,
+    releasedAt: 0,
+    lastHoveredAt: now,
+    hoverIntensity,
+    rays
+  });
+
+  while (landingPressures.length > 22) {
+    landingPressures.shift();
+  }
+}
+function updateLandingPressures(now) {
+  for (let i = landingPressures.length - 1; i >= 0; i -= 1) {
+    const pressure = landingPressures[i];
+
+    if (pressure.mode === "start-ray") {
+      if (pressure.releasedAt && now - pressure.releasedAt > 1100) {
+        landingPressures.splice(i, 1);
+      }
+      continue;
+    }
+
+    const crackLimit = pressure.mode === "hover" ? LANDING_HOVER_CRACK_LIMIT : LANDING_MAJOR_CRACK_LIMIT;
+    const activeCrackCount = landingCracks.filter((crack) => crack.mode === pressure.mode).length;
+
+    if (pressure.opens && !pressure.cracked && now >= pressure.crackAt && activeCrackCount < crackLimit) {
+      pressure.cracked = true;
+      createLandingCrack(pressure.x, pressure.y, pressure.strength, now, pressure.mode, pressure.directionIndex);
+    }
+
+    if (now - pressure.createdAt > pressure.life) {
+      landingPressures.splice(i, 1);
+    }
+  }
+}
+function drawLandingPressures(now, pixelRatio, transitionProgress) {
+  landingCtx.save();
+
+  landingPressures.forEach((pressure) => {
+    const isStartOriginHoverPressure = pressure.mode === "start-ray" && pressure.directionIndex === 0 && !pressure.cracked;
+
+    if (!isStartOriginHoverPressure || !pressure.rays.length) return;
+
+    const ageMs = now - pressure.createdAt;
+    const releaseFade = pressure.releasedAt ? 1 - smoothstep(0, 1100, now - pressure.releasedAt) : 1;
+    const hoverIntensity = clamp(pressure.hoverIntensity || 0, 0, 1);
+    const fade = smoothstep(0, 850, ageMs) * releaseFade;
+    const sustainedPulse = 0.78 + Math.sin(now * 0.00105 + pressure.angle) * 0.22;
+    const pressureAlpha = (0.021 + pressure.strength * 0.078) * fade * sustainedPulse * lerp(0.68, 1.1, hoverIntensity);
+
+    pressure.rays.forEach((ray) => {
+      const rayBuild = smoothstep(0, 760, ageMs - ray.delay * 1000);
+      const shimmer = 0.82 + Math.sin(now * 0.0012 + ray.seed * 30) * 0.18;
+      const lengthPulse = 0.86 + Math.sin(now * 0.00082 + ray.seed * 50) * lerp(0.08, 0.16, hoverIntensity);
+      const length = ray.length * pixelRatio * rayBuild * lengthPulse * lerp(0.78, 1.08, hoverIntensity);
+      const width = ray.width * pixelRatio * lerp(0.58, 1.12, hoverIntensity) * lerp(0.55, 1, rayBuild);
+      const angle = ray.angle + Math.sin(now * 0.00072 + ray.seed * 6) * ray.bend;
+      const endX = pressure.x + Math.cos(angle) * length;
+      const endY = pressure.y + Math.sin(angle) * length;
+      const sideX = Math.cos(angle + Math.PI * 0.5);
+      const sideY = Math.sin(angle + Math.PI * 0.5);
+      const alpha = pressureAlpha * shimmer;
+      const gradient = landingCtx.createLinearGradient(pressure.x, pressure.y, endX, endY);
+
+      if (alpha <= 0.001 || length <= 1) return;
+
+      gradient.addColorStop(0, grey(0, alpha * lerp(0.54, 0.82, hoverIntensity)));
+      gradient.addColorStop(0.38, grey(0, alpha * lerp(0.34, 0.56, hoverIntensity)));
+      gradient.addColorStop(1, grey(0, 0));
+      landingCtx.fillStyle = gradient;
+      landingCtx.beginPath();
+      landingCtx.moveTo(pressure.x + sideX * width * 0.06, pressure.y + sideY * width * 0.06);
+      landingCtx.quadraticCurveTo(
+        pressure.x + Math.cos(angle + ray.bend) * length * 0.52 + sideX * width * 0.22,
+        pressure.y + Math.sin(angle + ray.bend) * length * 0.52 + sideY * width * 0.22,
+        endX + sideX * width,
+        endY + sideY * width
+      );
+      landingCtx.lineTo(endX - sideX * width, endY - sideY * width);
+      landingCtx.quadraticCurveTo(
+        pressure.x + Math.cos(angle - ray.bend) * length * 0.48 - sideX * width * 0.18,
+        pressure.y + Math.sin(angle - ray.bend) * length * 0.48 - sideY * width * 0.18,
+        pressure.x - sideX * width * 0.06,
+        pressure.y - sideY * width * 0.06
+      );
+      landingCtx.closePath();
+      landingCtx.fill();
+    });
+  });
+
+  landingCtx.restore();
+}
+
+function createLandingCrack(x, y, strength, now = performance.now(), mode = "hover", directionIndex = null) {
+  if (!landingCanvas) return;
+
+  const safeStrength = clamp(strength, 0.05, 1.2);
+  const branchCount = 1;
+  const branches = [];
+  const baseAngle = getStructuralCrackAngle(x, y, mode, directionIndex);
+  const pixelRatio = landingCanvas.width / Math.max(1, window.innerWidth || 1);
+
+  for (let i = 0; i < branchCount; i += 1) {
+    const branchAngle = baseAngle + (mode === "collapse" ? 0 : (Math.random() - 0.5) * 0.42);
+    const edgeLength = distanceToCanvasEdge(x, y, branchAngle);
+    const length = mode === "collapse"
+      ? edgeLength * lerp(1.04, 1.18, Math.random())
+      : lerp(80, 190, Math.random()) * lerp(0.72, 1.38, safeStrength) * pixelRatio;
+    const segments = mode === "collapse" ? 10 + Math.floor(Math.random() * 5) : 5 + Math.floor(Math.random() * 3);
+    const baseWidth = lerp(2.0, 12, Math.random()) * safeStrength * LANDING_CRACK_DEPTH * pixelRatio;
+    const points = [];
+
+    for (let point = 0; point <= segments; point += 1) {
+      const t = point / segments;
+      const taper = Math.pow(Math.sin(t * Math.PI), 0.78);
+      const lump = lerp(0.34, 2.2, hash2(i, point, 934));
+      const suddenNarrow = hash2(i, point, 935) < 0.3 ? 0.22 : 1;
+      const sideways = (hash2(i, point, 936) - 0.5) * length * 0.09 * Math.pow(t, 0.9);
+      const pressureBend = Math.sin(t * Math.PI) * (hash2(i, point, 937) - 0.5) * length * 0.08;
+      const centerX = Math.cos(branchAngle) * length * t + Math.cos(branchAngle + Math.PI * 0.5) * (sideways + pressureBend);
+      const centerY = Math.sin(branchAngle) * length * t + Math.sin(branchAngle + Math.PI * 0.5) * (sideways + pressureBend);
+
+      points.push({
+        x: centerX,
+        y: centerY,
+        width: Math.max(0.06 * pixelRatio, baseWidth * taper * lump * suddenNarrow),
+        chipA: (hash2(i, point, 938) - 0.5) * baseWidth * LANDING_CRACK_CHIP,
+        chipB: (hash2(i, point, 939) - 0.5) * baseWidth * LANDING_CRACK_CHIP,
+        seed: hash2(i, point, 940)
+      });
+    }
+
+    branches.push({
+      points,
+      delay: Math.random() * 0.16,
+      seed: hash2(i, safeStrength, 941),
+      tone: lerp(0, 24, Math.random())
+    });
+  }
+
+  landingCracks.push({
+    x,
+    y,
+    strength: safeStrength,
+    createdAt: now,
+    life: mode === "collapse" ? 999999 : LANDING_CRACK_LIFETIME * lerp(1.1, 1.9, Math.random()),
+    mode,
+    directionIndex,
+    seed: Math.random(),
+    branches
+  });
+
+  if (mode === "collapse") {
+    landingCollapseOpened = true;
+    seedLandingSurfacePieces(x, y, safeStrength, now);
+  }
+
+  while (landingCracks.length > LANDING_MAJOR_CRACK_LIMIT) {
+    const removableIndex = landingCracks.findIndex((crack) => crack.mode !== "collapse");
+    landingCracks.splice(removableIndex >= 0 ? removableIndex : 0, 1);
+  }
+}
+
+function getStructuralCrackAngle(x, y, mode, directionIndex = 0) {
+  if (mode === "collapse") {
+    const directions = [
+      -Math.PI * 0.82,
+      -Math.PI * 0.48,
+      -Math.PI * 0.08,
+      Math.PI * 0.34,
+      Math.PI * 0.76
+    ];
+    const index = Number.isFinite(directionIndex) ? directionIndex : 0;
+    return directions[index % directions.length] + (hash1(index, 994) - 0.5) * 0.18;
+  }
+
+  return Math.random() * Math.PI * 2;
+}
+
+function distanceToCanvasEdge(x, y, angle) {
+  const dx = Math.cos(angle);
+  const dy = Math.sin(angle);
+  const distances = [];
+
+  if (Math.abs(dx) > 0.0001) {
+    distances.push(((dx > 0 ? landingCanvas.width : 0) - x) / dx);
+  }
+
+  if (Math.abs(dy) > 0.0001) {
+    distances.push(((dy > 0 ? landingCanvas.height : 0) - y) / dy);
+  }
+
+  return Math.max(1, Math.min(...distances.filter((distance) => distance > 0)));
+}
+
+function drawLandingCracks(now, pixelRatio, transitionProgress, shadowPass) {
+  if (shadowPass) return;
+
+  landingCtx.save();
+  landingCtx.lineCap = "butt";
+  landingCtx.lineJoin = "miter";
+
+  landingCracks.forEach((crack) => {
+    const ageRatio = clamp((now - crack.createdAt) / crack.life, 0, 1);
+    const fade = crack.mode === "collapse" ? 1 : 1 - smoothstep(0.82, 1, ageRatio);
+    const livingPulse = 0.9 + Math.sin(now * LANDING_CRACK_BREATHING_SPEED + crack.seed * Math.PI * 2) * 0.1;
+    const baseAlpha = fade * livingPulse * (0.085 + crack.strength * 0.38 + transitionProgress * 0.12);
+
+    crack.branches.forEach((branch, branchIndex) => {
+      const growth = smoothstep(branch.delay, 1, ageRatio * (crack.mode === "collapse" ? 0.18 : 1.25) + transitionProgress * (crack.mode === "collapse" ? 1.14 : 0.62));
+      if (growth <= 0.001) return;
+
+      const visiblePoints = Math.max(2, Math.ceil(branch.points.length * growth));
+      const points = branch.points.slice(0, visiblePoints);
+
+      drawLandingCrackShape(crack, branch, points, now, Math.min(0.9, baseAlpha * 1.34), 1.0);
+      drawLandingCrackInterior(crack, branch, points, now, baseAlpha, transitionProgress);
+      drawLandingCrackFragments(crack, branch, points, branchIndex, ageRatio, baseAlpha, pixelRatio);
+    });
+  });
+
+  landingCtx.restore();
+}
+
+function drawLandingCrackShape(crack, branch, points, now, alpha, widthScale) {
+  if (points.length < 2) return;
+
+  const edges = buildLandingCrackEdges(points, widthScale, now, branch.seed);
+  landingCtx.beginPath();
+  landingCtx.moveTo(crack.x + edges.left[0].x, crack.y + edges.left[0].y);
+
+  for (let i = 1; i < edges.left.length; i += 1) {
+    landingCtx.lineTo(crack.x + edges.left[i].x, crack.y + edges.left[i].y);
+  }
+
+  for (let i = edges.right.length - 1; i >= 0; i -= 1) {
+    landingCtx.lineTo(crack.x + edges.right[i].x, crack.y + edges.right[i].y);
+  }
+
+  landingCtx.closePath();
+  landingCtx.fillStyle = grey(0, alpha * 0.9);
+  landingCtx.fill();
+}
+
+function drawLandingCrackInterior(crack, branch, points, now, alpha, transitionProgress) {
+  // Circular pressure glows were removed so fractures keep one visual language:
+  // carved openings, hard fragments, and rare black rays.
+}
+function buildLandingCrackEdges(points, widthScale, now, seed) {
+  const left = [];
+  const right = [];
+
+  points.forEach((point, index) => {
+    const previous = points[Math.max(0, index - 1)];
+    const next = points[Math.min(points.length - 1, index + 1)];
+    const dx = next.x - previous.x;
+    const dy = next.y - previous.y;
+    const length = Math.max(0.001, Math.hypot(dx, dy));
+    const normalX = -dy / length;
+    const normalY = dx / length;
+    const breathe = 0.88 + Math.sin(now * LANDING_CRACK_BREATHING_SPEED * 1.5 + seed * 20 + index * 1.9) * 0.12;
+    const halfWidth = point.width * widthScale * breathe;
+    const chipA = point.chipA * widthScale * 0.4;
+    const chipB = point.chipB * widthScale * 0.4;
+
+    left.push({
+      x: point.x + normalX * (halfWidth + chipA),
+      y: point.y + normalY * (halfWidth + chipA)
+    });
+    right.push({
+      x: point.x - normalX * (halfWidth + chipB),
+      y: point.y - normalY * (halfWidth + chipB)
+    });
+  });
+
+  return { left, right };
+}
+
+function drawLandingCrackDepth(crack, branch, points, now, alpha, transitionProgress) {
+  // Depth is now implied by the fracture shape and black rays, not circular
+  // radial glows.
+}
+
+function drawLandingCrackFragments(crack, branch, points, branchIndex, ageRatio, alpha, pixelRatio) {
+  if (ageRatio < 0.18 || points.length < 3) return;
+
+  const count = Math.min(3, Math.floor(points.length * 0.32));
+  landingCtx.fillStyle = grey(0, alpha * 0.26);
+
+  for (let i = 0; i < count; i += 1) {
+    const seed = hash2(branchIndex, i, 981);
+    if (seed > 0.22 + ageRatio * 0.18) continue;
+
+    const point = points[1 + Math.floor(seed * (points.length - 2))];
+    const drift = smoothstep(0.18, 0.78, ageRatio) * lerp(2, 10, hash2(branchIndex, i, 982)) * pixelRatio;
+    const angle = hash2(branchIndex, i, 983) * Math.PI * 2;
+    const size = Math.max(pixelRatio, point.width * lerp(0.08, 0.22, hash2(branchIndex, i, 984)));
+
+    landingCtx.save();
+    landingCtx.translate(crack.x + point.x + Math.cos(angle) * drift, crack.y + point.y + Math.sin(angle) * drift);
+    landingCtx.rotate(angle + ageRatio * 0.5);
+    landingCtx.fillRect(-size * 0.5, -size * 0.5, size, size * lerp(0.3, 1, seed));
+    landingCtx.restore();
+  }
+}
+
+function pruneLandingCracks(now) {
+  for (let i = landingCracks.length - 1; i >= 0; i -= 1) {
+    const crack = landingCracks[i];
+    if (crack.mode !== "collapse" && now - crack.createdAt > crack.life) {
+      landingCracks.splice(i, 1);
+    }
+  }
+}
+
+function updateLandingNegativeRays(now, transitionProgress, pixelRatio) {
+  if (!landingCollapseOpened || transitionProgress < 0.1) return;
+  if (!landingFractureRayTarget) landingFractureRayTarget = 3 + Math.floor(Math.random() * 4);
+
+  const remainingRays = landingFractureRayTarget - landingFractureRaysCreated;
+  const progressPressure = smoothstep(0.1, 0.92, transitionProgress);
+  const neededPressure = remainingRays / Math.max(1, landingFractureRayTarget);
+  const chance = LANDING_NEGATIVE_RAY_CHANCE * 0.018 * progressPressure * lerp(0.55, 1.65, neededPressure);
+
+  if (remainingRays > 0 && landingNegativeRays.length < 3 && Math.random() < chance) {
+    const collapseCracks = landingCracks.filter((crack) => crack.mode === "collapse");
+    const crack = collapseCracks[Math.floor(Math.random() * collapseCracks.length)];
+    if (crack && createLandingNegativeRayFromCrack(crack, now, pixelRatio, false, transitionProgress)) {
+      landingFractureRaysCreated += 1;
+    }
+  }
+
+  for (let i = landingNegativeRays.length - 1; i >= 0; i -= 1) {
+    if (now - landingNegativeRays[i].createdAt > landingNegativeRays[i].life) {
+      landingNegativeRays.splice(i, 1);
+    }
+  }
+}
+
+function getVisibleLandingCrackPoints(crack, branch, now, transitionProgress) {
+  const ageRatio = clamp((now - crack.createdAt) / crack.life, 0, 1);
+  const growth = smoothstep(
+    branch.delay,
+    1,
+    ageRatio * (crack.mode === "collapse" ? 0.18 : 1.25) + transitionProgress * (crack.mode === "collapse" ? 1.14 : 0.62)
+  );
+
+  if (growth <= 0.001) return [];
+
+  const visiblePoints = Math.max(2, Math.ceil(branch.points.length * growth));
+  return branch.points.slice(0, visiblePoints);
+}
+
+function createLandingNegativeRayFromCrack(crack, now, pixelRatio, forceLong, transitionProgress) {
+  if (!crack || !crack.branches.length) return false;
+
+  const visibleBranches = crack.branches
+    .map((branch) => ({ branch, points: getVisibleLandingCrackPoints(crack, branch, now, transitionProgress) }))
+    .filter((entry) => entry.points.length > 2);
+
+  if (!visibleBranches.length) return false;
+
+  const visibleBranch = visibleBranches[Math.floor(Math.random() * visibleBranches.length)];
+  const point = visibleBranch.points[Math.floor(lerp(1, visibleBranch.points.length - 1, Math.random()))];
+  const startX = crack.x + point.x;
+  const startY = crack.y + point.y;
+  const centerX = landingCanvas.width * 0.5;
+  const centerY = landingCanvas.height * 0.5;
+  const outward = Math.atan2(startY - centerY, startX - centerX);
+  const angle = outward + (Math.random() - 0.5) * 0.9;
+  const edgeDistance = distanceToCanvasEdge(startX, startY, angle);
+
+  landingNegativeRays.push({
+    x: startX,
+    y: startY,
+    angle,
+    length: edgeDistance * (forceLong ? lerp(0.72, 1.12, Math.random()) : lerp(0.42, 1.06, Math.random())),
+    width: lerp(30, 116, Math.random()) * pixelRatio,
+    bend: (Math.random() - 0.5) * 0.16,
+    createdAt: now,
+    life: lerp(2200, 4800, Math.random()),
+    seed: Math.random()
+  });
+
+  return true;
+}
+
+function drawLandingNegativeRays(now, pixelRatio, transitionProgress) {
+  if (!landingNegativeRays.length) return;
+
+  landingCtx.save();
+  landingNegativeRays.forEach((ray) => {
+    const age = clamp((now - ray.createdAt) / ray.life, 0, 1);
+    const fade = smoothstep(0, 0.16, age) * (1 - smoothstep(0.68, 1, age));
+    const flicker = 0.76 + Math.sin(now * 0.0017 + ray.seed * 20) * 0.24;
+    const length = ray.length * lerp(0.18, 1, smoothstep(0, 0.48, age));
+    const angle = ray.angle + Math.sin(age * Math.PI * 2 + ray.seed) * ray.bend;
+    const endX = ray.x + Math.cos(angle) * length;
+    const endY = ray.y + Math.sin(angle) * length;
+    const sideX = Math.cos(angle + Math.PI * 0.5);
+    const sideY = Math.sin(angle + Math.PI * 0.5);
+    const opening = smoothstep(0, 0.55, age);
+    const startWidth = Math.max(pixelRatio * 0.45, ray.width * 0.018);
+    const endWidth = ray.width * lerp(0.26, 0.82, opening);
+    const gradient = landingCtx.createLinearGradient(ray.x, ray.y, endX, endY);
+    const alpha = 0.2 * fade * flicker * smoothstep(0.08, 1, transitionProgress);
+
+    gradient.addColorStop(0, grey(0, alpha));
+    gradient.addColorStop(0.42, grey(0, alpha * 0.38));
+    gradient.addColorStop(1, grey(0, 0));
+    landingCtx.fillStyle = gradient;
+    landingCtx.beginPath();
+    landingCtx.moveTo(ray.x + sideX * startWidth, ray.y + sideY * startWidth);
+    landingCtx.quadraticCurveTo(
+      ray.x + Math.cos(angle + ray.bend) * length * 0.5 + sideX * endWidth * 0.22,
+      ray.y + Math.sin(angle + ray.bend) * length * 0.5 + sideY * endWidth * 0.22,
+      endX + sideX * endWidth,
+      endY + sideY * endWidth
+    );
+    landingCtx.lineTo(endX - sideX * endWidth, endY - sideY * endWidth);
+    landingCtx.quadraticCurveTo(
+      ray.x + Math.cos(angle - ray.bend) * length * 0.48 - sideX * endWidth * 0.2,
+      ray.y + Math.sin(angle - ray.bend) * length * 0.48 - sideY * endWidth * 0.2,
+      ray.x - sideX * startWidth,
+      ray.y - sideY * startWidth
+    );
+    landingCtx.closePath();
+    landingCtx.fill();
+  });
+  landingCtx.restore();
+}
+
+function seedLandingSurfacePieces(x, y, strength, now) {
+  if (landingSurfacePieces.length > 48) return;
+
+  for (let i = 0; i < 5; i += 1) {
+    const angle = Math.random() * Math.PI * 2;
+    landingSurfacePieces.push({
+      x,
+      y,
+      vx: Math.cos(angle) * lerp(12, 42, Math.random()) * strength,
+      vy: Math.sin(angle) * lerp(12, 42, Math.random()) * strength,
+      size: lerp(12, 48, Math.random()) * strength,
+      rotation: Math.random() * Math.PI * 2,
+      spin: lerp(-0.6, 0.6, Math.random()),
+      createdAt: now,
+      life: 3200 + Math.random() * 2200,
+      alpha: lerp(0.018, 0.055, Math.random()),
+      tone: lerp(228, 246, Math.random()),
+      final: false
+    });
+  }
+}
+
+function seedLandingFinalSurfaceCollapse(now) {
+  const collapseCracks = landingCracks.filter((crack) => crack.mode === "collapse");
+  if (!collapseCracks.length) return;
+
+  for (let i = 0; i < LANDING_SURFACE_FRAGMENT_AMOUNT; i += 1) {
+    const x = Math.random() * landingCanvas.width;
+    const y = Math.random() * landingCanvas.height;
+    landingSurfacePieces.push({
+      x,
+      y,
+      vx: (Math.random() - 0.5) * 8,
+      vy: (Math.random() - 0.5) * 8,
+      size: lerp(10, 96, Math.random()),
+      rotation: Math.random() * Math.PI * 2,
+      spin: lerp(-0.32, 0.32, Math.random()),
+      createdAt: now + Math.random() * 520,
+      life: 3800 + Math.random() * 2800,
+      alpha: lerp(0.065, 0.18, Math.random()),
+      tone: lerp(220, 246, Math.random()),
+      final: true
+    });
+  }
+}
+
+function updateLandingSurfacePieces(now, transitionProgress, pixelRatio) {
+  if (landingCollapseOpened && !landingSurfaceCollapseSeeded && transitionProgress > LANDING_FINAL_COLLAPSE_START) {
+    landingSurfaceCollapseSeeded = true;
+    seedLandingFinalSurfaceCollapse(now);
+  }
+
+  if (!landingSurfacePieces.length) return;
+
+  const pull = LANDING_COLLAPSE_PULL_STRENGTH * smoothstep(LANDING_FINAL_COLLAPSE_START, 1, transitionProgress);
+  const singularityPull = smoothstep(LANDING_SINGULARITY_START, LANDING_SINGULARITY_HOLD_START, transitionProgress);
+  const singularity = getLandingSingularityPoint(pixelRatio);
+
+  for (let i = landingSurfacePieces.length - 1; i >= 0; i -= 1) {
+    const piece = landingSurfacePieces[i];
+    const age = clamp((now - piece.createdAt) / piece.life, 0, 1);
+    const targetPoint = singularityPull > 0.001
+      ? singularity
+      : getNearestCollapseOpening(piece.x, piece.y) || landingCracks[0];
+
+    if (targetPoint && pull > 0 && now >= piece.createdAt) {
+      const dx = targetPoint.x - piece.x;
+      const dy = targetPoint.y - piece.y;
+      const distance = Math.max(1, Math.hypot(dx, dy));
+      const piecePull = pull * (piece.final ? lerp(112, 260, singularityPull) : lerp(42, 130, singularityPull));
+      piece.vx += (dx / distance) * piecePull;
+      piece.vy += (dy / distance) * piecePull;
+    }
+
+    if (now >= piece.createdAt) {
+      if (singularityPull > 0.001) {
+        const compression = lerp(0.055, 0.24, singularityPull);
+        piece.vx *= lerp(0.88, 0.34, singularityPull);
+        piece.vy *= lerp(0.88, 0.34, singularityPull);
+        piece.x = lerp(piece.x + piece.vx * 0.012, singularity.x, compression);
+        piece.y = lerp(piece.y + piece.vy * 0.012, singularity.y, compression);
+        piece.size *= lerp(0.992, 0.94, singularityPull);
+
+        if (Math.hypot(piece.x - singularity.x, piece.y - singularity.y) < 3 * pixelRatio || singularityPull > 0.985) {
+          piece.x = singularity.x;
+          piece.y = singularity.y;
+          piece.vx = 0;
+          piece.vy = 0;
+          piece.spin = 0;
+          piece.absorbed = true;
+        }
+      } else {
+        piece.x += piece.vx * 0.016;
+        piece.y += piece.vy * 0.016;
+      }
+
+      piece.rotation += piece.spin * 0.016 * (1 - singularityPull);
+    }
+
+    if (age >= 1 && singularityPull < 0.92) landingSurfacePieces.splice(i, 1);
+  }
+}
+
+function getLandingSingularityPoint(pixelRatio) {
+  return getElementCanvasCenter(startButton) || {
+    x: landingCanvas.width * 0.5,
+    y: landingCanvas.height * 0.58
+  };
+}
+
+function getNearestCollapseOpening(x, y) {
+  let nearest = null;
+  let nearestDistance = Infinity;
+
+  landingCracks.forEach((crack) => {
+    if (crack.mode !== "collapse") return;
+
+    const distance = Math.hypot(crack.x - x, crack.y - y);
+    if (distance < nearestDistance) {
+      nearestDistance = distance;
+      nearest = crack;
+    }
+  });
+
+  return nearest;
+}
+
+function drawLandingSurfacePieces(now, pixelRatio, transitionProgress) {
+  if (!landingSurfacePieces.length || transitionProgress < LANDING_FINAL_COLLAPSE_START) return;
+
+  const singularityPull = smoothstep(LANDING_SINGULARITY_START, LANDING_SINGULARITY_HOLD_START, transitionProgress);
+  landingCtx.save();
+  landingSurfacePieces.forEach((piece) => {
+    if (now < piece.createdAt || piece.absorbed) return;
+
+    const age = clamp((now - piece.createdAt) / piece.life, 0, 1);
+    const compressionFade = 1 - smoothstep(0.72, 1, singularityPull);
+    const alpha = piece.alpha * smoothstep(LANDING_FINAL_COLLAPSE_START, 0.9, transitionProgress) * (1 - smoothstep(0.78, 1, age)) * compressionFade;
+    const compressedSize = piece.size * pixelRatio * lerp(1, 0.12, singularityPull);
+
+    if (alpha <= 0.001 || compressedSize <= 0.2) return;
+
+    landingCtx.fillStyle = grey(piece.tone, alpha);
+    landingCtx.save();
+    landingCtx.translate(piece.x, piece.y);
+    landingCtx.rotate(piece.rotation);
+    makeLandingPolygonPath(landingCtx, 0, 0, compressedSize, 4, piece.rotation);
+    landingCtx.fill();
+    landingCtx.restore();
+  });
+  landingCtx.restore();
+}
+function drawLandingCollapseDarkness(now, pixelRatio, transitionProgress) {
+  const collapseAmount = smoothstep(LANDING_FINAL_COLLAPSE_START, 1, transitionProgress);
+  if (collapseAmount <= 0.001) return;
+
+  landingCtx.save();
+
+  const finalDarkness = smoothstep(LANDING_FINAL_DARKNESS_START, 1, transitionProgress) * LANDING_FINAL_DARKNESS;
+  if (finalDarkness > 0.001) {
+    landingCtx.fillStyle = grey(0, finalDarkness);
+    landingCtx.fillRect(0, 0, landingCanvas.width, landingCanvas.height);
+  }
+
+  landingCtx.restore();
+}
+
+function drawLandingSingularity(now, pixelRatio, transitionProgress) {
+  if (transitionProgress < LANDING_SINGULARITY_START) return;
+  if (landingCameraRevealStartTime) return;
+
+  const compression = smoothstep(LANDING_SINGULARITY_START, LANDING_SINGULARITY_HOLD_START, transitionProgress);
+
+  // The last part of the collapse becomes almost still: the surface is no
+  // longer falling apart. It resolves into full black without showing a
+  // waiting point before the camera is ready behind the fractured shell.
+  if (compression > 0.001) {
+    landingCtx.save();
+    landingCtx.fillStyle = grey(0, 0.985 * compression);
+    landingCtx.fillRect(0, 0, landingCanvas.width, landingCanvas.height);
+    landingCtx.restore();
+  }
+}
+
+function seedLandingBlackShellPieces(pixelRatio) {
+  landingBlackShellPieces.length = 0;
+
+  const width = landingCanvas.width;
+  const height = landingCanvas.height;
+  const origin = getLandingSingularityPoint(pixelRatio);
+  const maxDistance = Math.hypot(
+    Math.max(origin.x, width - origin.x),
+    Math.max(origin.y, height - origin.y)
+  );
+
+  const shardCount = 5 + Math.floor(Math.random() * 2);
+
+  for (let index = 0; index < shardCount; index += 1) {
+    const seed = hash1(index, 1260) + Math.random() * 0.18;
+    const angle = (index / shardCount) * Math.PI * 2 + lerp(-0.42, 0.42, Math.random());
+    const distance = lerp(maxDistance * 0.08, maxDistance * 0.48, Math.pow(Math.random(), 0.72));
+    const x = origin.x + Math.cos(angle) * distance;
+    const y = origin.y + Math.sin(angle) * distance * 0.78;
+    const radial = clamp(Math.hypot(x - origin.x, y - origin.y) / Math.max(1, maxDistance), 0, 1);
+    const halfWidth = lerp(width * 0.18, width * 0.42, Math.random());
+    const halfHeight = lerp(height * 0.12, height * 0.34, Math.random());
+
+    landingBlackShellPieces.push({
+      x,
+      y,
+      rotation: lerp(-0.32, 0.32, Math.random()),
+      driftX: lerp(-10, 10, Math.random()) * pixelRatio,
+      driftY: lerp(-8, 12, Math.random()) * pixelRatio,
+      refractX: lerp(-10, 10, Math.random()) * pixelRatio,
+      refractY: lerp(-7, 7, Math.random()) * pixelRatio,
+      ghostX: lerp(-4, 4, Math.random()) * pixelRatio,
+      ghostY: lerp(-4, 4, Math.random()) * pixelRatio,
+      fadeStart: lerp(0.26, 0.46, Math.random()) + radial * 0.34,
+      fadeEnd: lerp(0.68, 0.92, Math.random()) + radial * 0.16,
+      seed,
+      points: createFinalBlackShardPoints(halfWidth, halfHeight, index)
+    });
+  }
+}
+
+function createFinalBlackShardPoints(halfWidth, halfHeight, index) {
+  const sides = 4 + Math.floor(hash1(index, 1270) * 3);
+  const points = [];
+
+  for (let point = 0; point < sides; point += 1) {
+    const angle = (point / sides) * Math.PI * 2 + (hash2(index, point, 1271) - 0.5) * 0.5;
+    const radiusX = halfWidth * lerp(0.62, 1.22, hash2(index, point, 1272));
+    const radiusY = halfHeight * lerp(0.64, 1.2, hash2(index, point, 1273));
+
+    points.push({
+      x: Math.cos(angle) * radiusX,
+      y: Math.sin(angle) * radiusY
+    });
+  }
+
+  return points;
+}
+
+function createLandingBlackShellPiecePoints(halfWidth, halfHeight, column, row, shape) {
+  const skew = (hash2(column, row, 1234) - 0.5) * halfWidth * 0.42;
+  const chip = Math.min(halfWidth, halfHeight) * 0.18;
+
+  if (shape === "rectangle") {
+    return [
+      { x: -halfWidth, y: -halfHeight },
+      { x: halfWidth, y: -halfHeight },
+      { x: halfWidth, y: halfHeight },
+      { x: -halfWidth, y: halfHeight }
+    ];
+  }
+
+  if (shape === "triangle") {
+    return [
+      { x: -halfWidth * lerp(0.92, 1.28, hash2(column, row, 1235)), y: halfHeight },
+      { x: halfWidth, y: halfHeight * lerp(0.62, 1.08, hash2(column, row, 1236)) },
+      { x: lerp(-halfWidth * 0.45, halfWidth * 0.45, hash2(column, row, 1237)), y: -halfHeight * lerp(1.05, 1.55, hash2(column, row, 1238)) }
+    ];
+  }
+
+  if (shape === "trapezoid") {
+    const topInset = halfWidth * lerp(0.16, 0.48, hash2(column, row, 1239));
+    const bottomInset = halfWidth * lerp(0.02, 0.2, hash2(column, row, 1240));
+
+    return [
+      { x: -halfWidth + topInset + skew * 0.2, y: -halfHeight },
+      { x: halfWidth - topInset + skew * 0.2, y: -halfHeight },
+      { x: halfWidth - bottomInset - skew * 0.18, y: halfHeight },
+      { x: -halfWidth + bottomInset - skew * 0.18, y: halfHeight }
+    ];
+  }
+
+  if (shape === "parallelogram") {
+    return [
+      { x: -halfWidth + skew, y: -halfHeight },
+      { x: halfWidth + skew, y: -halfHeight },
+      { x: halfWidth - skew, y: halfHeight },
+      { x: -halfWidth - skew, y: halfHeight }
+    ];
+  }
+
+  const points = [];
+  const steps = shape === "strip" ? 1 : 3;
+  for (let edge = 0; edge < 4; edge += 1) {
+    for (let step = 0; step <= steps; step += 1) {
+      if (edge > 0 && step === 0) continue;
+
+      const t = step / steps;
+      const edgeChip = shape === "strip" ? 0 : (hash2(column * 10 + edge, row * 10 + step, 1214) - 0.5) * chip;
+      let x = 0;
+      let y = 0;
+
+      if (edge === 0) {
+        x = lerp(-halfWidth, halfWidth, t);
+        y = -halfHeight + edgeChip;
+      } else if (edge === 1) {
+        x = halfWidth + edgeChip;
+        y = lerp(-halfHeight, halfHeight, t);
+      } else if (edge === 2) {
+        x = lerp(halfWidth, -halfWidth, t);
+        y = halfHeight + edgeChip;
+      } else {
+        x = -halfWidth + edgeChip;
+        y = lerp(halfHeight, -halfHeight, t);
+      }
+
+      points.push({ x, y });
+    }
+  }
+
+  return points;
+}
+
+function drawLandingBlackShellPiece(piece, now, elapsed) {
+  const progress = smoothstep(0, LANDING_CAMERA_REVEAL_DURATION, elapsed);
+  const fade = 1 - smoothstep(piece.fadeStart, Math.min(1, piece.fadeEnd), progress);
+
+  if (fade <= 0.001) return;
+
+  const localDrift = smoothstep(piece.fadeStart, Math.min(1, piece.fadeEnd), progress);
+  const shimmer = 0.92 + Math.sin(now * 0.00072 + piece.seed * 40) * 0.08;
+  const x = piece.x + piece.driftX * localDrift;
+  const y = piece.y + piece.driftY * localDrift;
+  const rotation = piece.rotation + Math.sin(now * 0.00028 + piece.seed * 20) * 0.012;
+
+  landingCtx.save();
+  landingCtx.translate(x, y);
+  landingCtx.rotate(rotation);
+  landingCtx.beginPath();
+
+  piece.points.forEach((point, index) => {
+    if (index === 0) {
+      landingCtx.moveTo(point.x, point.y);
+    } else {
+      landingCtx.lineTo(point.x, point.y);
+    }
+  });
+
+  landingCtx.closePath();
+  landingCtx.clip();
+  landingCtx.setTransform(1, 0, 0, 1, 0, 0);
+
+  if (canvas && canvas.width && canvas.height) {
+    const refractStrength = fade * 0.32;
+
+    landingCtx.globalAlpha = refractStrength;
+    landingCtx.drawImage(canvas, piece.refractX, piece.refractY, landingCanvas.width, landingCanvas.height);
+    landingCtx.globalAlpha = refractStrength * 0.28;
+    landingCtx.drawImage(canvas, piece.refractX + piece.ghostX, piece.refractY + piece.ghostY, landingCanvas.width, landingCanvas.height);
+  }
+
+  landingCtx.globalAlpha = 1;
+  landingCtx.fillStyle = grey(0, fade * lerp(0.78, 0.9, shimmer));
+  landingCtx.fillRect(0, 0, landingCanvas.width, landingCanvas.height);
+  landingCtx.restore();
+}
+
+function drawLandingCameraReveal(now, pixelRatio) {
+  if (!landingCameraRevealStartTime || landingRevealCompleted) return;
+
+  const elapsed = now - landingCameraRevealStartTime;
+
+  if (!landingBlackShellPieces.length) {
+    seedLandingBlackShellPieces(pixelRatio);
+  }
+
+  landingCtx.save();
+  const barrierAlpha = 1 - smoothstep(0.06, 0.28, elapsed / LANDING_CAMERA_REVEAL_DURATION);
+  if (barrierAlpha > 0.001) {
+    landingCtx.fillStyle = grey(0, barrierAlpha);
+    landingCtx.fillRect(0, 0, landingCanvas.width, landingCanvas.height);
+  }
+  landingBlackShellPieces.forEach((piece) => drawLandingBlackShellPiece(piece, now, elapsed));
+  landingCtx.restore();
+}
+
+function completeLandingCameraReveal(now) {
+  if (!landingCameraRevealStartTime || landingRevealCompleted) return;
+
+  if (now - landingCameraRevealStartTime < LANDING_CAMERA_REVEAL_DURATION + 180) return;
+
+  landingRevealCompleted = true;
+  startPanel.classList.add("is-hidden");
+  stopLandingAnimation();
+}
+
+function seedLandingLetterBodies(now) {
+  if (!landingTitle || landingLettersSeeded) return;
+
+  landingLetterBodies.length = 0;
+  const letters = Array.from(landingTitle.querySelectorAll(".title-letter"));
+
+  letters.forEach((letter, index) => {
+    const rect = letter.getBoundingClientRect();
+    const seed = hash1(index, 984);
+
+    landingLetterBodies.push({
+      element: letter,
+      originX: rect.left + rect.width * 0.5,
+      originY: rect.top + rect.height * 0.5,
+      width: rect.width,
+      height: rect.height,
+      x: 0,
+      y: 0,
+      vx: 0,
+      vy: 0,
+      angle: 0,
+      angularVelocity: 0,
+      mass: lerp(0.75, 3.4, seed),
+      seed,
+      launched: false,
+      impactCooldown: 0
+    });
+  });
+
+  landingLettersSeeded = true;
+}
+
+function updateLandingLetterBodies(now, dt, transitionProgress, pixelRatio) {
+  if (!landingIsTransitioning || !landingLetterBodies.length) return;
+
+  const elapsed = now - landingTransitionStart;
+  const viewportWidth = Math.max(1, window.innerWidth || 1);
+  const viewportHeight = Math.max(1, window.innerHeight || 1);
+  const source = getElementViewportCenter(startButton) || { x: viewportWidth * 0.5, y: viewportHeight * 0.58 };
+  const anticipation = 1 - smoothstep(0, LANDING_LETTER_EXPULSION_DELAY, elapsed);
+
+  landingLetterBodies.forEach((body, index) => {
+    body.impactCooldown = Math.max(0, body.impactCooldown - dt);
+
+    if (elapsed < LANDING_LETTER_EXPULSION_DELAY) {
+      const pressureWave = Math.sin(now * 0.012 + body.seed * 20) * anticipation;
+      const dx = body.originX - source.x;
+      const dy = body.originY - source.y;
+      const distance = Math.max(1, Math.hypot(dx, dy));
+      const surfacePressure = smoothstep(0, LANDING_LETTER_EXPULSION_DELAY, elapsed);
+      body.x = (dx / distance) * pressureWave * surfacePressure * 5;
+      body.y = (dy / distance) * pressureWave * surfacePressure * 3;
+      body.angle = (body.seed - 0.5) * surfacePressure * 3;
+      applyLandingLetterTransform(body);
+      return;
+    }
+
+    if (!body.launched) {
+      const dx = body.originX - source.x;
+      const dy = body.originY - source.y;
+      const distance = Math.max(1, Math.hypot(dx, dy));
+      const angleOffset = (body.seed - 0.5) * 0.58;
+      const outwardAngle = Math.atan2(dy, dx) + angleOffset;
+      const force = LANDING_LETTER_IMPACT_FORCE * lerp(0.82, 1.45, hash1(index, 986)) / body.mass;
+      body.vx = Math.cos(outwardAngle) * force;
+      body.vy = Math.sin(outwardAngle) * force;
+      body.angularVelocity = (body.seed - 0.5) * lerp(420, 920, hash1(index, 987)) / body.mass;
+      body.launched = true;
+    }
+
+    const latePressure = smoothstep(0.08, 0.78, transitionProgress);
+    body.vx *= Math.pow(0.992, dt * 60);
+    body.vy *= Math.pow(0.992, dt * 60);
+    body.vy += (body.seed - 0.5) * 20 * dt * latePressure;
+    body.x += body.vx * dt;
+    body.y += body.vy * dt;
+    body.angle += body.angularVelocity * dt;
+    body.angularVelocity *= Math.pow(0.988, dt * 60);
+
+    bounceLandingLetterFromEdges(body, now, pixelRatio, viewportWidth, viewportHeight);
+    applyLandingLetterTransform(body);
+  });
+}
+
+function bounceLandingLetterFromEdges(body, now, pixelRatio, viewportWidth, viewportHeight) {
+  const halfWidth = Math.max(4, body.width * 0.5);
+  const halfHeight = Math.max(8, body.height * 0.5);
+  let impactX = null;
+  let impactY = null;
+  let impactStrength = 0;
+  const currentX = body.originX + body.x;
+  const currentY = body.originY + body.y;
+
+  if (currentX - halfWidth < 0) {
+    body.x = halfWidth - body.originX;
+    impactStrength = Math.max(impactStrength, Math.abs(body.vx));
+    body.vx = Math.abs(body.vx) * LANDING_LETTER_BOUNCE;
+    impactX = 0;
+    impactY = currentY;
+  } else if (currentX + halfWidth > viewportWidth) {
+    body.x = viewportWidth - halfWidth - body.originX;
+    impactStrength = Math.max(impactStrength, Math.abs(body.vx));
+    body.vx = -Math.abs(body.vx) * LANDING_LETTER_BOUNCE;
+    impactX = viewportWidth;
+    impactY = currentY;
+  }
+
+  if (currentY - halfHeight < 0) {
+    body.y = halfHeight - body.originY;
+    impactStrength = Math.max(impactStrength, Math.abs(body.vy));
+    body.vy = Math.abs(body.vy) * LANDING_LETTER_BOUNCE;
+    impactX = currentX;
+    impactY = 0;
+  } else if (currentY + halfHeight > viewportHeight) {
+    body.y = viewportHeight - halfHeight - body.originY;
+    impactStrength = Math.max(impactStrength, Math.abs(body.vy));
+    body.vy = -Math.abs(body.vy) * LANDING_LETTER_BOUNCE;
+    impactX = currentX;
+    impactY = viewportHeight;
+  }
+
+  if (impactX !== null && body.impactCooldown <= 0) {
+    const x = clamp(impactX, 0, viewportWidth) * pixelRatio;
+    const y = clamp(impactY, 0, viewportHeight) * pixelRatio;
+    const strength = lerp(0.48, 1, clamp(impactStrength / 1300, 0, 1));
+    createLandingPressure(x, y, strength, now, 70);
+    body.impactCooldown = 0.22;
+  }
+}
+
+function applyLandingLetterTransform(body) {
+  body.element.style.setProperty("--live-x", body.x.toFixed(2) + "px");
+  body.element.style.setProperty("--live-y", body.y.toFixed(2) + "px");
+  body.element.style.setProperty("--live-r", body.angle.toFixed(2) + "deg");
+  body.element.style.setProperty("--fail-o", String(Math.max(0.28, 0.92 - Math.hypot(body.x, body.y) / 1200)));
+}
+
 function handleLandingPointer(event) {
   landingPointerX = event.clientX;
   landingPointerY = event.clientY;
-  landingPointerActiveUntil = performance.now() + 1200;
+  landingPointerActiveUntil = performance.now() + 900;
+  startPanel.classList.add("is-pointer-damaging");
+  deformLandingTitleFromPointer(event.clientX, event.clientY);
+
+  if (event.type === "pointerdown" && !landingIsTransitioning && !startButton.contains(event.target)) {
+    handleLandingFragmentClick(event.clientX, event.clientY);
+  }
+}
+
+function handleLandingFragmentClick(clientX, clientY) {
+  if (!landingCanvas) return;
+
+  const now = performance.now();
+  const pixelRatio = landingCanvas.width / Math.max(1, window.innerWidth || 1);
+  const x = clientX * pixelRatio;
+  const y = clientY * pixelRatio;
+  let closest = null;
+  let closestDistance = Infinity;
+
+  landingArtifacts.forEach((artifact) => {
+    if (!artifact.invitation || !artifact.active || now < artifact.reactionCooldownUntil) return;
+
+    const distance = Math.hypot(artifact.x - x, artifact.y - y);
+    const radius = Math.max(LANDING_FRAGMENT_CLICK_RADIUS * pixelRatio, artifact.size * 2.2, artifact.length * 0.32);
+
+    if (distance < radius && distance < closestDistance) {
+      closest = artifact;
+      closestDistance = distance;
+    }
+  });
+
+  if (closest) {
+    reactToLandingFragment(closest, now, pixelRatio, "click");
+  }
 }
 
 function clearLandingPointer() {
   landingPointerActiveUntil = 0;
+  startPanel.classList.remove("is-pointer-damaging");
+  relaxLandingTitle();
+}
+
+function handleStartButtonTouch(event) {
+  if (landingIsTransitioning) return;
+
+  startPanel.classList.add("is-button-touched");
+  landingButtonDamage = Math.min(1, landingButtonDamage + 0.22);
+  handleLandingPointer(event);
+
+  const now = performance.now();
+  if (now - landingLastCrackAt > LANDING_CURSOR_DAMAGE_INTERVAL * 0.8) {
+    const center = getElementCanvasCenter(startButton);
+    if (center) createLandingPressure(center.x, center.y, 0.28, now, 620, true, "hover", 0);
+    landingLastCrackAt = now;
+  }
+}
+
+function clearStartButtonTouch() {
+  if (!landingIsTransitioning) {
+    startPanel.classList.remove("is-button-touched");
+  }
+}
+
+function deformLandingTitleFromPointer(pointerX, pointerY) {
+  if (!landingTitle || landingIsTransitioning) return;
+
+  const letters = landingTitle.querySelectorAll(".title-letter");
+  const radius = Math.max(180, Math.min(window.innerWidth, window.innerHeight) * 0.32);
+
+  letters.forEach((letter, index) => {
+    const rect = letter.getBoundingClientRect();
+    const centerX = rect.left + rect.width * 0.5;
+    const centerY = rect.top + rect.height * 0.5;
+    const dx = centerX - pointerX;
+    const dy = centerY - pointerY;
+    const distance = Math.hypot(dx, dy);
+    const pressure = Math.pow(Math.max(0, 1 - distance / radius), 1.85);
+    const direction = distance > 0.001 ? Math.atan2(dy, dx) : hash1(index, 990) * Math.PI * 2;
+    const weight = lerp(0.35, 1.5, hash1(index, 991));
+
+    letter.style.setProperty("--live-x", (Math.cos(direction) * pressure * weight * 7).toFixed(2) + "px");
+    letter.style.setProperty("--live-y", (Math.sin(direction) * pressure * weight * 4.5).toFixed(2) + "px");
+    letter.style.setProperty("--live-r", ((hash1(index, 992) - 0.5) * pressure * 2.6).toFixed(2) + "deg");
+  });
+}
+
+function relaxLandingTitle() {
+  if (!landingTitle || landingIsTransitioning) return;
+
+  landingTitle.querySelectorAll(".title-letter").forEach((letter) => {
+    letter.style.setProperty("--live-x", "0px");
+    letter.style.setProperty("--live-y", "0px");
+    letter.style.setProperty("--live-r", "0deg");
+  });
+}
+
+function getElementCanvasRect(element) {
+  if (!element || !landingCanvas) return null;
+
+  const rect = element.getBoundingClientRect();
+  const pixelRatio = landingCanvas.width / Math.max(1, window.innerWidth || 1);
+
+  return {
+    x: rect.left * pixelRatio,
+    y: rect.top * pixelRatio,
+    width: rect.width * pixelRatio,
+    height: rect.height * pixelRatio
+  };
+}
+
+function getElementCanvasCenter(element) {
+  const rect = getElementCanvasRect(element);
+
+  if (!rect) return null;
+
+  return {
+    x: rect.x + rect.width * 0.5,
+    y: rect.y + rect.height * 0.5
+  };
+}
+
+function getElementViewportCenter(element) {
+  if (!element) return null;
+
+  const rect = element.getBoundingClientRect();
+
+  return {
+    x: rect.left + rect.width * 0.5,
+    y: rect.top + rect.height * 0.5
+  };
+}
+
+function seedLandingTransitionCracks(now) {
+  const buttonCenter = getElementCanvasCenter(startButton);
+
+  if (buttonCenter) {
+    landingFractureRayTarget = 3 + Math.floor(Math.random() * 4);
+    landingFractureRaysCreated = 0;
+    landingLastCrackAt = now;
+    createLandingPressure(buttonCenter.x, buttonCenter.y, 0.72, now, 180, true, "collapse", 0);
+  }
+
+
 }
 
 async function beginLandingTransition() {
   if (landingHasStartedCamera) return;
 
+  const now = performance.now();
   landingHasStartedCamera = true;
   landingIsTransitioning = true;
-  landingTransitionStart = performance.now();
+  landingTransitionStart = now;
+  landingButtonDamage = 1;
+  landingLastCrackAt = 0;
+  landingBlackShellPieces.length = 0;
+  landingNegativeRays.length = 0;
+  landingFractureRayTarget = 0;
+  landingFractureRaysCreated = 0;
+  landingCameraRevealStartTime = 0;
+  landingRevealCompleted = false;
   startButton.disabled = true;
-  startMessage.textContent = "Entering...";
-  startPanel.classList.add("is-transitioning");
+  startMessage.textContent = "";
+  startPanel.classList.add("is-transitioning", "is-button-touched");
+  seedLandingLetterBodies(now);
+  seedLandingTransitionCracks(now);
 
   window.setTimeout(() => {
     startInstallation();
@@ -502,7 +2223,7 @@ async function beginLandingTransition() {
 
 async function startInstallation() {
   startButton.disabled = true;
-  startMessage.textContent = "Opening camera...";
+  startMessage.textContent = "Waiting for presence...";
 
   try {
     ensureCameraIsAvailable();
@@ -515,16 +2236,27 @@ async function startInstallation() {
     isRunning = true;
     resetTransformation();
 
-    startPanel.classList.add("is-hidden");
-    stopLandingAnimation();
-    switchCameraButton.hidden = false;
-    updateStatusText("Stage 1", "Searching");
-
+    switchCameraButton.hidden = true;
+    updateStatusText("Waiting for presence...", "");
     runSegmentationLoop();
+
+    if (landingIsTransitioning) {
+      startPanel.classList.add("is-revealing-camera");
+      landingBlackShellPieces.length = 0;
+      landingCameraRevealStartTime = performance.now();
+      landingRevealCompleted = false;
+      startLandingAnimation();
+    } else {
+      startPanel.classList.add("is-hidden");
+      stopLandingAnimation();
+    }
   } catch (error) {
     landingHasStartedCamera = false;
     landingIsTransitioning = false;
-    startPanel.classList.remove("is-transitioning");
+    landingCameraRevealStartTime = 0;
+    landingRevealCompleted = false;
+    landingBlackShellPieces.length = 0;
+    startPanel.classList.remove("is-transitioning", "is-revealing-camera");
     startButton.disabled = false;
     startMessage.textContent = friendlyError(error);
     startLandingAnimation();
@@ -832,13 +2564,11 @@ function renderFrame(now) {
 
   if (!BASIC_PROTOTYPE_ONLY) {
     drawMotionTrails(ctx, latestProgress, now);
-    drawDetachedSkeletonFragments(ctx, latestProgress, now);
     drawDigitalVolumeLayer(ctx, latestProgress, now, "near");
     drawSubtleOuterFragments(ctx, latestProgress, now);
   }
 
-  const stage = getStage(latestProgress);
-  updateStatusText(manualStage ? `Stage ${manualStage}` : `Stage ${stage}`, `${Math.round(latestProgress * 100)}%`);
+  updateStatusText("", "");
 }
 
 function drawCameraBackground() {
@@ -1154,8 +2884,6 @@ function drawBodyReplacement(progress, now) {
     drawBasicMaskOverlay();
   } else {
     drawDarkMatterCoverage(progress, now);
-    drawPoseSkeleton(bodyCtx, progress, now);
-    drawPoseJointCorruption(bodyCtx, progress, now);
     drawDigitalParticles(progress, now);
     drawGeometricFragments(progress, now);
     drawFirstPixelErrors(progress, now);
@@ -2010,12 +3738,12 @@ function handleKeyboard(event) {
   if (key >= "1" && key <= "5") {
     manualStage = Number(key);
     latestProgress = MANUAL_STAGE_PROGRESS[manualStage];
-    updateStatusText(`Stage ${manualStage}`, "Manual");
+    updateStatusText("", "");
   }
 
   if (key === "r") {
     resetTransformation();
-    updateStatusText("Stage 1", "Reset");
+    updateStatusText("Waiting for presence...", "");
   }
 }
 
@@ -2636,40 +4364,9 @@ function addPoseMotionTrails(points, now) {
     }
   }
 
-  for (let i = 0; i < SKELETON_CONNECTIONS.length && createdThisFrame < frameLimit; i += 1) {
-    if (Math.random() > 0.36 * trailProgress) continue;
-
-    const connection = SKELETON_CONNECTIONS[i];
-    const currentA = points[connection[0]];
-    const currentB = points[connection[1]];
-    const previousA = previousPoseScreenLandmarks[connection[0]];
-    const previousB = previousPoseScreenLandmarks[connection[1]];
-
-    if (!isVisiblePosePoint(currentA) || !isVisiblePosePoint(currentB) || !isVisiblePosePoint(previousA) || !isVisiblePosePoint(previousB)) continue;
-
-    const currentMid = { x: (currentA.x + currentB.x) * 0.5, y: (currentA.y + currentB.y) * 0.5 };
-    const previousMid = { x: (previousA.x + previousB.x) * 0.5, y: (previousA.y + previousB.y) * 0.5 };
-    const movement = distanceBetween(currentMid, previousMid);
-
-    if (movement < 3.5) continue;
-
-    trailFragments.push({
-      type: "line",
-      x1: previousA.x,
-      y1: previousA.y,
-      x2: previousB.x,
-      y2: previousB.y,
-      vx: (previousMid.x - currentMid.x) * lerp(0.55, 1.25, Math.random()) + (Math.random() - 0.5) * OUTSIDE_BODY_SPREAD * trailProgress,
-      vy: (previousMid.y - currentMid.y) * lerp(0.55, 1.25, Math.random()) + (Math.random() - 0.5) * OUTSIDE_BODY_SPREAD * trailProgress,
-      size: SKELETON_LINE_WIDTH * lerp(0.8, 2.1, trailProgress),
-      tone: lerp(0, 112, Math.random()),
-      alpha: lerp(0.08, 0.36, trailProgress),
-      createdAt: now,
-      life: TRAIL_LIFETIME * lerp(0.55, 1.15, Math.random())
-    });
-
-    createdThisFrame += 1;
-  }
+  // Visible skeleton-line trails are intentionally not generated. Pose still
+  // drives the particles and body deformation internally, but tracking lines
+  // are hidden from the visitor.
 
   pruneTrailFragments();
 }
@@ -2790,10 +4487,16 @@ function nextAnimationFrame() {
 }
 
 function updateStatusText(stage, body) {
-  if (!SHOW_STATUS_PANEL) return;
+  if (!SHOW_STATUS_PANEL || !statePanel || !stageLabel) return;
 
-  stageLabel.textContent = stage;
-  bodyLabel.textContent = body;
+  const shouldWait = isRunning && !bodyIsPresent;
+  stageLabel.textContent = shouldWait ? "Waiting for presence..." : "";
+  statePanel.classList.toggle("is-empty", !shouldWait);
+
+  if (bodyLabel) {
+    bodyLabel.hidden = true;
+    bodyLabel.textContent = "";
+  }
 }
 
 function friendlyError(error) {

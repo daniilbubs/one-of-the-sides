@@ -22,19 +22,26 @@
         <canvas id="landingCanvas" aria-hidden="true"></canvas>
         <div class="landing-content">
           <h1 id="landingTitle" aria-label="One of the Sides">
-            <span aria-hidden="true" class="title-letter">O</span><span aria-hidden="true" class="title-letter">n</span><span aria-hidden="true" class="title-letter">e</span><span aria-hidden="true" class="title-space"> </span><span aria-hidden="true" class="title-letter">o</span><span aria-hidden="true" class="title-letter">f</span><span aria-hidden="true" class="title-space"> </span><span aria-hidden="true" class="title-letter">t</span><span aria-hidden="true" class="title-letter">h</span><span aria-hidden="true" class="title-letter">e</span><span aria-hidden="true" class="title-space"> </span><span aria-hidden="true" class="title-letter">S</span><span aria-hidden="true" class="title-letter">i</span><span aria-hidden="true" class="title-letter">d</span><span aria-hidden="true" class="title-letter">e</span><span aria-hidden="true" class="title-letter">s</span>
+            <span class="title-line" aria-hidden="true"><span class="title-letter">O</span><span class="title-letter">n</span><span class="title-letter">e</span><span class="title-space"> </span><span class="title-letter">o</span><span class="title-letter">f</span></span>
+            <span class="title-line" aria-hidden="true"><span class="title-letter">t</span><span class="title-letter">h</span><span class="title-letter">e</span><span class="title-space"> </span><span class="title-letter">S</span><span class="title-letter">i</span><span class="title-letter">d</span><span class="title-letter">e</span><span class="title-letter">s</span></span>
           </h1>
+
+          <div id="cameraChoice" class="camera-choice" role="group" aria-label="Camera direction">
+            <button class="choice-button is-selected" type="button" data-camera-choice="environment">Rear Camera</button>
+            <button class="choice-button" type="button" data-camera-choice="user">Front Camera</button>
+          </div>
+
           <button id="startButton" class="primary-button" type="button">Start</button>
-          <p id="startMessage" class="start-message">Camera access begins after the transition.</p>
+          <p id="startMessage" class="start-message">Waiting for presence...</p>
         </div>
       </section>
 
       <div id="statePanel" class="state-panel" aria-live="polite">
-        <span id="stageLabel">Waiting</span>
-        <span id="bodyLabel">No body</span>
+        <span id="stageLabel">Waiting for presence...</span>
+        <span id="bodyLabel" hidden></span>
       </div>
 
-      <button id="switchCameraButton" class="camera-button" type="button" hidden>
+      <button id="switchCameraButton" class="camera-button" type="button" hidden aria-hidden="true">
         Camera
       </button>
     </main>
