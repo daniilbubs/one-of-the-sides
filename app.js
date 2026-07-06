@@ -88,8 +88,6 @@ const EDGE_DISTORTION = 34;
 const CHAOS_INTENSITY = 1.04;
 const MISSING_DATA_DENSITY = 0.52;
 const GLITCH_STRIP_DENSITY = 0.5;
-const DARK_COVERAGE_OPACITY = 0.72;
-const FINAL_BLACKNESS = 0.82;
 const WHITE_SPECK_AMOUNT = 0.025;
 
 // Living digital-space behavior. These controls shape the shallow 3D volume,
@@ -155,6 +153,15 @@ const BODY_DEFORMATION_SMOOTHING = 0.82;
 const BODY_FRAME_MEMORY_COUNT = 8;
 const BODY_FRAME_MEMORY_INTERVAL_MS = 75;
 const BODY_DETACHED_FRAGMENT_AMOUNT = 120;
+const BODY_STRUCTURAL_INSTABILITY_ENABLED = true;
+const BODY_STRUCTURAL_INSTABILITY_INTENSITY = 0.42;
+const BODY_STRUCTURAL_INSTABILITY_MAX_REGIONS = 2;
+const BODY_STRUCTURAL_INSTABILITY_INTERVAL_MS = 6200;
+const BODY_STRUCTURAL_INSTABILITY_DURATION = 0.58;
+const BODY_STRUCTURAL_INSTABILITY_RADIUS = 58;
+const BODY_STRUCTURAL_INSTABILITY_STRETCH = 0.18;
+const BODY_STRUCTURAL_INSTABILITY_LAG_FRAMES = 4;
+const BODY_STRUCTURAL_INSTABILITY_TREMBLE = 3.8;
 
 // Detection controls.
 const BODY_PRESENT_MIN_COVERAGE = 0.012;
@@ -1881,22 +1888,27 @@ function drawLandingBlackShellPiece(piece, now, elapsed) {
   landingCtx.restore();
 }
 
+function drawLandingDissolvingBlackSurface(progress) {
+  const surfaceOpacity = 1 - smoothstep(0.04, 0.96, progress);
+
+  if (surfaceOpacity <= 0.001) return;
+
+  // Final transition only: after the physical collapse has already happened,
+  // the remaining black barrier quietly becomes transparent over the camera.
+  landingCtx.save();
+  landingCtx.fillStyle = grey(0, surfaceOpacity);
+  landingCtx.fillRect(0, 0, landingCanvas.width, landingCanvas.height);
+  landingCtx.restore();
+}
+
 function drawLandingCameraReveal(now, pixelRatio) {
   if (!landingCameraRevealStartTime || landingRevealCompleted) return;
 
   const elapsed = now - landingCameraRevealStartTime;
-
-  if (!landingBlackShellPieces.length) {
-    seedLandingBlackShellPieces(pixelRatio);
-  }
+  const revealProgress = clamp(elapsed / LANDING_CAMERA_REVEAL_DURATION, 0, 1);
 
   landingCtx.save();
-  const barrierAlpha = 1 - smoothstep(0.06, 0.28, elapsed / LANDING_CAMERA_REVEAL_DURATION);
-  if (barrierAlpha > 0.001) {
-    landingCtx.fillStyle = grey(0, barrierAlpha);
-    landingCtx.fillRect(0, 0, landingCanvas.width, landingCanvas.height);
-  }
-  landingBlackShellPieces.forEach((piece) => drawLandingBlackShellPiece(piece, now, elapsed));
+  drawLandingDissolvingBlackSurface(revealProgress);
   landingCtx.restore();
 }
 
@@ -2592,13 +2604,7 @@ function drawBodyImageDeformation(progress, now) {
   drawAnatomicalSliceDeformation(stageAmount, progress, now);
   drawFaceDeconstruction(stageAmount, progress, now);
   drawExtremityMicroDeformation(stageAmount, progress, now);
-
-  // The main fractured body stays tied to the performer. Large misaligned body
-  // echoes are added after this clip, so late stages can break the silhouette.
-  deformedBodyCtx.save();
-  deformedBodyCtx.globalCompositeOperation = "destination-in";
-  deformedBodyCtx.drawImage(maskCanvas, 0, 0);
-  deformedBodyCtx.restore();
+  drawSubtleStructuralInstability(stageAmount, progress, now);
 
   drawDetachedBodyFragments(stageAmount, progress, now);
   ctx.drawImage(deformedBodyCanvas, 0, 0);
@@ -2808,6 +2814,90 @@ function drawExtremityMicroDeformation(stageAmount, progress, now) {
   });
 }
 
+function drawSubtleStructuralInstability(stageAmount, progress, now) {
+  if (!BODY_STRUCTURAL_INSTABILITY_ENABLED || !hasReliablePose(now)) return;
+
+  const source = getFrameMemorySource(0);
+  if (!source) return;
+
+  const instability = smoothstep(0.1, 1, progress) * BODY_STRUCTURAL_INSTABILITY_INTENSITY * stageAmount;
+  if (instability <= 0.001) return;
+
+  const nodes = getStructureNodes(progress, true, true).filter((node) => sampleMask(node.x, node.y) > 0.12);
+  if (!nodes.length) return;
+
+  const regionCount = Math.max(1, Math.min(BODY_STRUCTURAL_INSTABILITY_MAX_REGIONS, 2));
+
+  deformedBodyCtx.save();
+
+  for (let regionIndex = 0; regionIndex < regionCount; regionIndex += 1) {
+    const interval = BODY_STRUCTURAL_INSTABILITY_INTERVAL_MS;
+    const localTime = now + regionIndex * interval * 0.41;
+    const phase = (localTime % interval) / interval;
+    const epoch = Math.floor(localTime / interval);
+    const envelope = smoothstep(0.08, 0.24, phase)
+      * (1 - smoothstep(BODY_STRUCTURAL_INSTABILITY_DURATION, 0.96, phase))
+      * instability;
+
+    if (envelope <= 0.01) continue;
+
+    const nodeIndex = Math.floor(hash2(epoch, regionIndex, 421) * nodes.length);
+    const node = nodes[nodeIndex];
+    if (!node) continue;
+
+    const seed = hash2(epoch, regionIndex, 422);
+    const radius = BODY_STRUCTURAL_INSTABILITY_RADIUS * lerp(0.72, 1.35, seed) * lerp(0.82, 1.22, node.weight || 1);
+    const pullAngle = seed * Math.PI * 2 + Math.sin(now * 0.00018 + seed * 12) * 0.42;
+    const pull = BODY_SLICE_DISPLACEMENT * 0.24 * envelope * lerp(0.45, 1.15, seed);
+    const delay = Math.floor(lerp(1, BODY_STRUCTURAL_INSTABILITY_LAG_FRAMES, hash2(epoch, regionIndex, 423)));
+    const delayedSource = getFrameMemorySource(delay) || source;
+    const patchCount = 1 + Math.floor(hash2(epoch, regionIndex, 424) * 2);
+
+    for (let patch = 0; patch < patchCount; patch += 1) {
+      const patchSeed = hash2(epoch + regionIndex * 10, patch, 425);
+      const offsetAngle = patchSeed * Math.PI * 2;
+      const offsetDistance = radius * 0.32 * hash2(epoch, patch, 426);
+      const centerX = node.x + Math.cos(offsetAngle) * offsetDistance;
+      const centerY = node.y + Math.sin(offsetAngle) * offsetDistance;
+
+      if (sampleMask(centerX, centerY) < 0.1) continue;
+
+      const trembleX = Math.sin(now * 0.0017 + patchSeed * 20) * BODY_STRUCTURAL_INSTABILITY_TREMBLE * envelope;
+      const trembleY = Math.cos(now * 0.0013 + patchSeed * 18) * BODY_STRUCTURAL_INSTABILITY_TREMBLE * envelope;
+      const width = radius * lerp(0.58, 1.45, patchSeed);
+      const height = radius * lerp(0.34, 0.88, hash2(epoch, patch, 427));
+      const stretch = BODY_STRUCTURAL_INSTABILITY_STRETCH * envelope * lerp(0.45, 1.25, patchSeed);
+      const scaleX = 1 + stretch;
+      const scaleY = 1 - stretch * lerp(0.18, 0.48, hash2(epoch, patch, 428));
+      const dx = centerX + Math.cos(pullAngle) * pull + trembleX;
+      const dy = centerY + Math.sin(pullAngle) * pull * 0.72 + trembleY;
+      const sourceLagX = Math.cos(pullAngle + Math.PI) * pull * 0.36;
+      const sourceLagY = Math.sin(pullAngle + Math.PI) * pull * 0.24;
+      const rotation = (patchSeed - 0.5) * BODY_ROTATION_AMOUNT * envelope * 0.9;
+      const alpha = clamp(0.16 + envelope * 0.74, 0, 0.82);
+
+      drawOpaqueImageFragment(
+        deformedBodyCtx,
+        delayedSource,
+        centerX - width * 0.5 + sourceLagX,
+        centerY - height * 0.5 + sourceLagY,
+        width,
+        height,
+        dx - width * scaleX * 0.5,
+        dy - height * scaleY * 0.5,
+        width * scaleX,
+        height * scaleY,
+        rotation,
+        patchSeed,
+        patchSeed > 0.56,
+        alpha
+      );
+    }
+  }
+
+  deformedBodyCtx.restore();
+}
+
 function drawDetachedBodyFragments(stageAmount, progress, now) {
   const expansion = smoothstep(0.5, 1, progress) * stageAmount;
   if (expansion <= 0.001) return;
@@ -2835,13 +2925,14 @@ function drawDetachedBodyFragments(stageAmount, progress, now) {
   }
 }
 
-function drawOpaqueImageFragment(targetCtx, source, sx, sy, sw, sh, dx, dy, dw, dh, rotation = 0, seed = 0, polygonClip = false) {
+function drawOpaqueImageFragment(targetCtx, source, sx, sy, sw, sh, dx, dy, dw, dh, rotation = 0, seed = 0, polygonClip = false, alpha = 1) {
   if (!source || !source.width || !source.height || sw <= 1 || sh <= 1 || dw <= 1 || dh <= 1) return;
 
   const sourceRect = clampSourceRect(source, sx, sy, sw, sh);
   if (!sourceRect) return;
 
   targetCtx.save();
+  targetCtx.globalAlpha = clamp(alpha, 0, 1);
   targetCtx.translate(dx + dw * 0.5, dy + dh * 0.5);
   targetCtx.rotate(rotation);
 
@@ -2882,6 +2973,10 @@ function drawBodyReplacement(progress, now) {
 
   if (BASIC_PROTOTYPE_ONLY) {
     drawBasicMaskOverlay();
+    bodyCtx.save();
+    bodyCtx.globalCompositeOperation = "destination-in";
+    bodyCtx.drawImage(maskCanvas, 0, 0);
+    bodyCtx.restore();
   } else {
     drawDarkMatterCoverage(progress, now);
     drawDigitalParticles(progress, now);
@@ -2891,13 +2986,6 @@ function drawBodyReplacement(progress, now) {
     drawGlitchStrips(progress, now);
     drawUnstableInnerEdges(progress, now);
   }
-
-  // Inner matter is still clipped to the detected body so the early stages
-  // stay connected. Separate depth layers later spread beyond this boundary.
-  bodyCtx.save();
-  bodyCtx.globalCompositeOperation = "destination-in";
-  bodyCtx.drawImage(maskCanvas, 0, 0);
-  bodyCtx.restore();
 }
 
 // Basic prototype layer: a transparent dark overlay that proves the body mask
@@ -2920,14 +3008,7 @@ function drawDarkMatterCoverage(progress, now) {
   const nodes = getStructureNodes(progress, true);
   if (!nodes.length) return;
 
-  const lateBlackness = smoothstep(0.62, 1, progress) * FINAL_BLACKNESS;
-
   bodyCtx.save();
-
-  if (lateBlackness > 0.001) {
-    bodyCtx.fillStyle = grey(0, DARK_COVERAGE_OPACITY * lateBlackness * 0.34);
-    bodyCtx.fillRect(0, 0, bodyCanvas.width, bodyCanvas.height);
-  }
 
   nodes.forEach((node, nodeIndex) => {
     if (!node.active) return;
