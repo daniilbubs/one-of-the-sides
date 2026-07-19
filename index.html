@@ -12,6 +12,8 @@
     <link rel="stylesheet" href="styles.css">
     <script defer src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/selfie_segmentation.js"></script>
     <script defer src="app.js"></script>
+    <script defer src="side2-fluid.js"></script>
+    <script defer src="side3-light.js"></script>
   </head>
   <body>
     <main class="installation" aria-label="One of the Sides camera installation">
@@ -33,6 +35,13 @@
 
           <button id="startButton" class="primary-button" type="button">Start</button>
           <p id="startMessage" class="start-message">Waiting for presence...</p>
+        </div>
+
+        <div id="sideSelection" class="side-selection" aria-label="Select side" hidden>
+          <button class="side-selection-button" type="button" data-side="1">1</button>
+          <button class="side-selection-button" type="button" data-side="2">2</button>
+          <button class="side-selection-button" type="button" data-side="3">3</button>
+          <button class="side-selection-button" type="button" data-side="4">4</button>
         </div>
       </section>
 

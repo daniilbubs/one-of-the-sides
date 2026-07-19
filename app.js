@@ -163,6 +163,87 @@ const BODY_STRUCTURAL_INSTABILITY_STRETCH = 0.18;
 const BODY_STRUCTURAL_INSTABILITY_LAG_FRAMES = 4;
 const BODY_STRUCTURAL_INSTABILITY_TREMBLE = 3.8;
 
+// Interactive sound layer. Leave CHOIR_AUDIO_URL empty to use the built-in
+// Web Audio choir-like placeholder. If you later add your own licensed
+// recording, put it in the project folder and set this to "audio/your-file.mp3"
+// or "audio/your-file.ogg".
+const SOUND_ENABLED = true;
+const CHOIR_AUDIO_URL = "";
+const SOUND_MASTER_VOLUME = 0.34;
+const SOUND_BASE_VOLUME = 0.012;
+const SOUND_HAND_VOLUME = 0.32;
+const SOUND_HAND_SMOOTHING_SECONDS = 0.82;
+const SOUND_MOVEMENT_SMOOTHING_SECONDS = 0.46;
+const SOUND_MOVEMENT_FULL_SPEED = 42;
+const SOUND_STAGE_MAX_INTENSITY = [0, 0.045, 0.13, 0.46, 0.74, 1.0];
+const SOUND_LEFT_PRESENCE_POWER = 1.32;
+const SOUND_STEREO_WIDTH_MAX = 0.34;
+const SOUND_RIGHT_TREMOLO_DEPTH = 0.68;
+const SOUND_PITCH_RISE = 0.085;
+const SOUND_BRIGHTNESS_LOW = 720;
+const SOUND_BRIGHTNESS_HIGH = 4200;
+const SOUND_FRAGMENTATION_AMOUNT = 0.68;
+const SOUND_MOVEMENT_FRAGMENTATION = 0.5;
+const SOUND_TREMOLO_RATE_LOW = 0.18;
+const SOUND_TREMOLO_RATE_HIGH = 7.2;
+const SOUND_DELAY_TIME_LOW = 0.08;
+const SOUND_DELAY_TIME_HIGH = 0.19;
+const SOUND_DELAY_WET_MAX = 0.16;
+const SOUND_DISTORTION_DRIVE = 36;
+
+const SIDE4_SOUNDTRACK_URL = "audio/side4-final-soundtrack.mp3";
+const SIDE4_SOUNDTRACK_MASTER_VOLUME = 0.92;
+const SIDE4_SOUNDTRACK_BASE_VOLUME = 0.018;
+const SIDE4_SOUNDTRACK_HAND_VOLUME = 0.82;
+const SIDE4_SOUNDTRACK_VOLUME_POWER = 1.16;
+const SIDE4_SOUNDTRACK_DESTRUCTION_SMOOTHING_SECONDS = 0.36;
+const SIDE4_SOUNDTRACK_CLEAN_MIN = 0.96;
+const SIDE4_SOUNDTRACK_ARTIFACT_MAX = 0.34;
+const SIDE4_SOUNDTRACK_ANCHOR_MAX = 0.98;
+const SIDE4_SOUNDTRACK_MICROLOOP_MAX = 1.14;
+const SIDE4_SOUNDTRACK_LOOP_CROSSFADE_SECONDS = 10;
+
+// Side 4 visual memory: record full camera frames so the room itself can
+// accumulate overlapping moments of its own past.
+const SIDE4_POSE_MEMORY_DURATION = 28000;
+const SIDE4_POSE_MEMORY_RECORD_INTERVAL = 115;
+const SIDE4_POSE_MEMORY_MAX_FRAMES = 280;
+const SIDE4_MEMORY_STAGE_SETTINGS = [
+  null,
+  { maxFragments: 0, minInterval: 999999, maxInterval: 999999, minDuration: 0, maxDuration: 0, minAlpha: 0, maxAlpha: 0 },
+  { maxFragments: 1, minInterval: 14000, maxInterval: 23000, minDuration: 1600, maxDuration: 2600, minAlpha: 0.14, maxAlpha: 0.34 },
+  { maxFragments: 2, minInterval: 4200, maxInterval: 7600, minDuration: 2600, maxDuration: 4600, minAlpha: 0.26, maxAlpha: 0.62 },
+  { maxFragments: 5, minInterval: 1900, maxInterval: 4100, minDuration: 3600, maxDuration: 6400, minAlpha: 0.24, maxAlpha: 0.7 },
+  { maxFragments: 10, minInterval: 760, maxInterval: 1800, minDuration: 5200, maxDuration: 9200, minAlpha: 0.22, maxAlpha: 0.72 }
+];
+const SIDE4_MEMORY_REPLAY_MIN_MS = 1700;
+const SIDE4_MEMORY_REPLAY_MAX_MS = 2500;
+const SIDE4_MEMORY_DISSOLVE_MIN_MS = 900;
+const SIDE4_MEMORY_DISSOLVE_MAX_MS = 2600;
+const SIDE4_ROOM_MEMORY_DURATION = 42000;
+const SIDE4_ROOM_MEMORY_CAPTURE_INTERVAL_MS = 320;
+const SIDE4_ROOM_MEMORY_MAX_FRAMES = 132;
+const SIDE4_ROOM_MEMORY_SCALE = 0.72;
+const SIDE4_ROOM_SNAPSHOT_MIN_INTERVAL = 5200;
+const SIDE4_ROOM_SNAPSHOT_MAX_INTERVAL = 11800;
+const SIDE4_ROOM_SNAPSHOT_MIN_DURATION = 6200;
+const SIDE4_ROOM_SNAPSHOT_MAX_DURATION = 12800;
+const SIDE4_ROOM_NONLINEAR_MIN_INTERVAL = 2600;
+const SIDE4_ROOM_NONLINEAR_MAX_INTERVAL = 7200;
+const SIDE4_ROOM_MIRROR_MIN_INTERVAL = 6200;
+const SIDE4_ROOM_MIRROR_MAX_INTERVAL = 12800;
+const SIDE4_ROOM_MIRROR_MIN_DURATION = 4300;
+const SIDE4_ROOM_MIRROR_MAX_DURATION = 5400;
+const SIDE4_ROOM_INVERTED_MIN_INTERVAL = 8200;
+const SIDE4_ROOM_INVERTED_MAX_INTERVAL = 16800;
+const SIDE4_ROOM_INVERTED_MIN_DURATION = 4600;
+const SIDE4_ROOM_INVERTED_MAX_DURATION = 6200;
+const SIDE4_ROOM_DEEP_MIN_INTERVAL = 7000;
+const SIDE4_ROOM_DEEP_MAX_INTERVAL = 15400;
+const SIDE4_ROOM_DEEP_MIN_DURATION = 8200;
+const SIDE4_ROOM_DEEP_MAX_DURATION = 17800;
+const SIDE4_EYE_VOID_START_PROGRESS = 0;
+
 // Detection controls.
 const BODY_PRESENT_MIN_COVERAGE = 0.012;
 const BODY_MISSING_RESET_AFTER_MS = 900;
@@ -189,6 +270,8 @@ const landingCtx = landingCanvas ? landingCanvas.getContext("2d") : null;
 const landingTitle = document.getElementById("landingTitle");
 const startButton = document.getElementById("startButton");
 const startMessage = document.getElementById("startMessage");
+const sideSelection = document.getElementById("sideSelection");
+const sideSelectionButtons = Array.from(document.querySelectorAll("[data-side]"));
 const cameraChoiceButtons = Array.from(document.querySelectorAll("[data-camera-choice]"));
 const statePanel = document.getElementById("statePanel");
 const stageLabel = document.getElementById("stageLabel");
@@ -207,6 +290,13 @@ const deformedBodyCtx = deformedBodyCanvas.getContext("2d");
 
 const frameMemoryCanvases = Array.from({ length: BODY_FRAME_MEMORY_COUNT }, () => document.createElement("canvas"));
 const frameMemoryContexts = frameMemoryCanvases.map((memoryCanvas) => memoryCanvas.getContext("2d"));
+const side4RoomMemoryCanvases = Array.from({ length: SIDE4_ROOM_MEMORY_MAX_FRAMES }, () => document.createElement("canvas"));
+const side4RoomMemoryContexts = side4RoomMemoryCanvases.map((memoryCanvas) => memoryCanvas.getContext("2d"));
+const side4RoomMemoryFramePool = side4RoomMemoryCanvases.map((memoryCanvas, index) => ({
+  canvas: memoryCanvas,
+  ctx: side4RoomMemoryContexts[index],
+  time: 0
+}));
 
 const sampleCanvas = document.createElement("canvas");
 sampleCanvas.width = MASK_SAMPLE_SIZE;
@@ -262,6 +352,60 @@ let landingCameraRevealStartTime = 0;
 let landingRevealCompleted = false;
 let landingFractureRayTarget = 0;
 let landingFractureRaysCreated = 0;
+let selectedSideNumber = 1;
+let sideSelectionIsActive = false;
+let sideSelectionIsLocked = false;
+
+let audioContext = null;
+let audioNodes = null;
+let audioStarted = false;
+let audioSampleSource = null;
+let audioTargetLeftPresence = 0;
+let audioTargetRightMovement = 0;
+let audioTargetMovement = 0;
+let audioSmoothedLeftPresence = 0;
+let audioSmoothedRightMovement = 0;
+let audioSmoothedMovement = 0;
+let audioFractureEnergy = 0;
+let audioLastUpdateAt = 0;
+let side4SoundtrackBuffer = null;
+let side4SoundtrackSource = null;
+let side4SoundtrackFadingSource = null;
+let side4SoundtrackLoading = false;
+let side4SoundtrackActive = false;
+let side4SoundtrackStopScheduled = false;
+let side4SoundtrackStartedAt = 0;
+let side4SoundtrackOffset = 0;
+let side4SoundtrackPlaybackPosition = 0;
+let side4SoundtrackLastPositionAt = 0;
+let side4SoundtrackPlaybackRate = 1;
+let side4NextStructuralGrainAt = 0;
+let side4StructuralGrainSerial = 0;
+let side4NextLockupAt = 0;
+let side4LockupStartedAt = 0;
+let side4LockupUntil = 0;
+let side4LockupOffset = 0;
+let side4LockupStrength = 0;
+let side4NextBurstAt = 0;
+let side4BurstStartedAt = 0;
+let side4BurstUntil = 0;
+let side4BurstStrength = 0;
+let side4FragmentWindowIndex = -1;
+let side4FreezeUntil = 0;
+let side4SmoothedDestruction = 0;
+let side4LastPoseMemoryRecordAt = 0;
+let side4NextMemoryFragmentAt = 0;
+let side4MemoryFragmentSerial = 0;
+let side4LastMemoryStage = 0;
+let side4LastRoomMemoryRecordAt = 0;
+let side4NextRoomSnapshotAt = 0;
+let side4NextRoomNonlinearAt = 0;
+let side4NextRoomMirrorAt = 0;
+let side4NextRoomInvertedAt = 0;
+let side4NextRoomDeepAt = 0;
+let side4RoomMemorySerial = 0;
+let side4RoomLivingLayer = null;
+let side4RoomOldLayer = null;
 
 const landingArtifacts = [];
 const landingCracks = [];
@@ -272,6 +416,10 @@ const landingBlackShellPieces = [];
 const landingFragmentShards = [];
 const landingLetterBodies = [];
 const trailFragments = [];
+const side4PoseMemory = [];
+const side4MemoryFragments = [];
+const side4RoomMemoryFrames = [];
+const side4RoomMemoryLayers = [];
 
 const MANUAL_STAGE_PROGRESS = {
   1: 0.08,
@@ -279,6 +427,13 @@ const MANUAL_STAGE_PROGRESS = {
   3: 0.52,
   4: 0.76,
   5: 0.97
+};
+
+const SIDE_ROUTES = {
+  1: startSideOne,
+  2: startSideTwo,
+  3: startSideThree,
+  4: startSideFour
 };
 
 
@@ -369,6 +524,9 @@ startButton.addEventListener("pointerenter", handleStartButtonTouch, { passive: 
 startButton.addEventListener("pointermove", handleStartButtonTouch, { passive: true });
 startButton.addEventListener("pointerdown", handleStartButtonTouch, { passive: true });
 startButton.addEventListener("pointerleave", clearStartButtonTouch, { passive: true });
+sideSelectionButtons.forEach((button) => {
+  button.addEventListener("click", () => selectSide(Number(button.dataset.side || 1)));
+});
 switchCameraButton.addEventListener("click", switchCamera);
 window.addEventListener("resize", handleViewportResize);
 window.addEventListener("orientationchange", () => window.setTimeout(handleViewportResize, 250));
@@ -2211,6 +2369,7 @@ async function beginLandingTransition() {
   if (landingHasStartedCamera) return;
 
   const now = performance.now();
+  startInteractiveSoundLayer();
   landingHasStartedCamera = true;
   landingIsTransitioning = true;
   landingTransitionStart = now;
@@ -2229,8 +2388,158 @@ async function beginLandingTransition() {
   seedLandingTransitionCracks(now);
 
   window.setTimeout(() => {
-    startInstallation();
+    showSideSelection();
   }, LANDING_TRANSITION_CAMERA_DELAY);
+}
+
+function showSideSelection() {
+  if (!sideSelection || sideSelectionIsActive || landingCameraRevealStartTime) {
+    if (!sideSelection) startSideOne();
+    return;
+  }
+
+  sideSelectionIsActive = true;
+  sideSelectionIsLocked = false;
+  sideSelection.hidden = false;
+  sideSelection.classList.remove("is-exiting");
+  sideSelectionButtons.forEach((button) => {
+    button.disabled = false;
+  });
+
+  window.requestAnimationFrame(() => {
+    sideSelection.classList.add("is-visible");
+  });
+}
+
+function selectSide(sideNumber) {
+  if (sideSelectionIsLocked) return;
+
+  const safeSideNumber = [1, 2, 3, 4].includes(sideNumber) ? sideNumber : 1;
+  selectedSideNumber = safeSideNumber;
+  if (selectedSideNumber === 2 && window.Side2Fluid && typeof window.Side2Fluid.primeAudio === "function") {
+    window.Side2Fluid.primeAudio();
+  }
+  if (selectedSideNumber === 3 && window.Side3Light && typeof window.Side3Light.primeAudio === "function") {
+    window.Side3Light.primeAudio();
+  }
+  sideSelectionIsLocked = true;
+  sideSelectionButtons.forEach((button) => {
+    button.disabled = true;
+  });
+
+  if (sideSelection) {
+    sideSelection.classList.remove("is-visible");
+    sideSelection.classList.add("is-exiting");
+  }
+
+  window.setTimeout(() => {
+    if (sideSelection) {
+      sideSelection.hidden = true;
+      sideSelection.classList.remove("is-exiting");
+    }
+
+    sideSelectionIsActive = false;
+    enterSelectedSide();
+  }, 900);
+}
+
+function enterSelectedSide() {
+  const route = SIDE_ROUTES[selectedSideNumber] || SIDE_ROUTES[1];
+  route();
+}
+
+function startSideOne() {
+  return startInstallation();
+}
+
+function startSideTwo() {
+  if (!window.Side2Fluid || typeof window.Side2Fluid.start !== "function") {
+    return startSideOne();
+  }
+
+  return window.Side2Fluid.start({
+    facingMode: cameraFacingMode,
+    onReady: () => {
+      switchCameraButton.hidden = true;
+      updateStatusText("", "");
+
+      if (landingIsTransitioning) {
+        startPanel.classList.add("is-revealing-camera");
+        landingBlackShellPieces.length = 0;
+        landingCameraRevealStartTime = performance.now();
+        landingRevealCompleted = false;
+        startLandingAnimation();
+      } else {
+        startPanel.classList.add("is-hidden");
+        stopLandingAnimation();
+      }
+    },
+    onError: (error) => {
+      landingHasStartedCamera = false;
+      landingIsTransitioning = false;
+      landingCameraRevealStartTime = 0;
+      landingRevealCompleted = false;
+      landingBlackShellPieces.length = 0;
+      sideSelectionIsActive = false;
+      sideSelectionIsLocked = false;
+      if (sideSelection) {
+        sideSelection.hidden = true;
+        sideSelection.classList.remove("is-visible", "is-exiting");
+      }
+      startPanel.classList.remove("is-transitioning", "is-revealing-camera");
+      startButton.disabled = false;
+      startMessage.textContent = friendlyError(error);
+      startLandingAnimation();
+      console.error(error);
+    }
+  });
+}
+
+function startSideThree() {
+  if (!window.Side3Light || typeof window.Side3Light.start !== "function") {
+    return startSideOne();
+  }
+
+  return window.Side3Light.start({
+    facingMode: cameraFacingMode,
+    onReady: () => {
+      switchCameraButton.hidden = true;
+      updateStatusText("", "");
+
+      if (landingIsTransitioning) {
+        startPanel.classList.add("is-revealing-camera");
+        landingBlackShellPieces.length = 0;
+        landingCameraRevealStartTime = performance.now();
+        landingRevealCompleted = false;
+        startLandingAnimation();
+      } else {
+        startPanel.classList.add("is-hidden");
+        stopLandingAnimation();
+      }
+    },
+    onError: (error) => {
+      landingHasStartedCamera = false;
+      landingIsTransitioning = false;
+      landingCameraRevealStartTime = 0;
+      landingRevealCompleted = false;
+      landingBlackShellPieces.length = 0;
+      sideSelectionIsActive = false;
+      sideSelectionIsLocked = false;
+      if (sideSelection) {
+        sideSelection.hidden = true;
+        sideSelection.classList.remove("is-visible", "is-exiting");
+      }
+      startPanel.classList.remove("is-transitioning", "is-revealing-camera");
+      startButton.disabled = false;
+      startMessage.textContent = friendlyError(error);
+      startLandingAnimation();
+      console.error(error);
+    }
+  });
+}
+
+function startSideFour() {
+  return startSideOne();
 }
 
 async function startInstallation() {
@@ -2268,12 +2577,993 @@ async function startInstallation() {
     landingCameraRevealStartTime = 0;
     landingRevealCompleted = false;
     landingBlackShellPieces.length = 0;
+    sideSelectionIsActive = false;
+    sideSelectionIsLocked = false;
+    if (sideSelection) {
+      sideSelection.hidden = true;
+      sideSelection.classList.remove("is-visible", "is-exiting");
+    }
     startPanel.classList.remove("is-transitioning", "is-revealing-camera");
     startButton.disabled = false;
     startMessage.textContent = friendlyError(error);
     startLandingAnimation();
     console.error(error);
   }
+}
+
+// -----------------------------------------------------------------------------
+// INTERACTIVE SOUND
+// -----------------------------------------------------------------------------
+
+function startInteractiveSoundLayer() {
+  if (!SOUND_ENABLED) return;
+
+  const AudioConstructor = window.AudioContext || window.webkitAudioContext;
+  if (!AudioConstructor) {
+    console.warn("Web Audio API is not available in this browser.");
+    return;
+  }
+
+  if (!audioContext) {
+    audioContext = new AudioConstructor();
+    audioNodes = createInteractiveAudioGraph(audioContext);
+    createSyntheticChoirVoices(audioContext, audioNodes);
+    loadChoirAudioSampleIfNeeded();
+    setupSide4SoundtrackSource(audioContext, audioNodes);
+    loadSide4SoundtrackIfNeeded();
+  }
+
+  audioStarted = true;
+  audioContext.resume().catch((error) => {
+    console.warn("Audio could not be resumed.", error);
+  });
+
+  updateInteractiveAudio(performance.now());
+}
+
+function createInteractiveAudioGraph(context) {
+  const sourceBus = context.createGain();
+  const synthGain = context.createGain();
+  const sampleGain = context.createGain();
+  const pureGain = context.createGain();
+  const brokenGain = context.createGain();
+  const toneFilter = context.createBiquadFilter();
+  const distortion = context.createWaveShaper();
+  const delay = context.createDelay(0.6);
+  const delayFeedback = context.createGain();
+  const delayWet = context.createGain();
+  const tremoloGain = context.createGain();
+  const tremoloOsc = context.createOscillator();
+  const tremoloDepth = context.createGain();
+  const side4AnchorGain = context.createGain();
+  const side4NaturalGain = context.createGain();
+  const side4FragmentGain = context.createGain();
+  const side4StructuralGrainGain = context.createGain();
+  const side4ToneFilter = context.createBiquadFilter();
+  const side4ShardFilter = context.createBiquadFilter();
+  const side4ShardDrive = context.createWaveShaper();
+  const side4ChopGain = context.createGain();
+  const side4Delay = context.createDelay(1.4);
+  const side4DelayFeedback = context.createGain();
+  const side4DelayWet = context.createGain();
+  const side4ArtifactSource = context.createBufferSource();
+  const side4ArtifactFilter = context.createBiquadFilter();
+  const side4ArtifactGain = context.createGain();
+  const spatialPanner = typeof context.createStereoPanner === "function"
+    ? context.createStereoPanner()
+    : null;
+  const masterGain = context.createGain();
+  const limiter = context.createDynamicsCompressor();
+
+  synthGain.gain.value = 1;
+  sampleGain.gain.value = 0;
+  pureGain.gain.value = 0.9;
+  brokenGain.gain.value = 0.02;
+  toneFilter.type = "lowpass";
+  toneFilter.frequency.value = SOUND_BRIGHTNESS_LOW;
+  toneFilter.Q.value = 0.68;
+  distortion.curve = createChoirDistortionCurve(SOUND_DISTORTION_DRIVE);
+  distortion.oversample = "2x";
+  delay.delayTime.value = SOUND_DELAY_TIME_LOW;
+  delayFeedback.gain.value = 0.18;
+  delayWet.gain.value = 0;
+  tremoloGain.gain.value = 1;
+  tremoloOsc.type = "sine";
+  tremoloOsc.frequency.value = SOUND_TREMOLO_RATE_LOW;
+  tremoloDepth.gain.value = 0;
+  side4AnchorGain.gain.value = 0;
+  side4NaturalGain.gain.value = 0;
+  side4FragmentGain.gain.value = 0;
+  side4StructuralGrainGain.gain.value = 0;
+  side4ToneFilter.type = "allpass";
+  side4ToneFilter.frequency.value = 5400;
+  side4ToneFilter.Q.value = 0.72;
+  side4ShardFilter.type = "bandpass";
+  side4ShardFilter.frequency.value = 2600;
+  side4ShardFilter.Q.value = 5.5;
+  side4ShardDrive.curve = createChoirDistortionCurve(18);
+  side4ShardDrive.oversample = "2x";
+  side4ChopGain.gain.value = 1;
+  side4Delay.delayTime.value = 0.18;
+  side4DelayFeedback.gain.value = 0.12;
+  side4DelayWet.gain.value = 0;
+  side4ArtifactSource.buffer = createSide4CrackleBuffer(context);
+  side4ArtifactSource.loop = true;
+  side4ArtifactFilter.type = "highpass";
+  side4ArtifactFilter.frequency.value = 3200;
+  side4ArtifactFilter.Q.value = 0.9;
+  side4ArtifactGain.gain.value = 0;
+  if (spatialPanner) spatialPanner.pan.value = 0;
+  masterGain.gain.value = 0;
+  limiter.threshold.value = -18;
+  limiter.knee.value = 18;
+  limiter.ratio.value = 6;
+  limiter.attack.value = 0.012;
+  limiter.release.value = 0.28;
+
+  synthGain.connect(sourceBus);
+  sampleGain.connect(sourceBus);
+  sourceBus.connect(pureGain);
+  sourceBus.connect(brokenGain);
+  pureGain.connect(toneFilter);
+  toneFilter.connect(tremoloGain);
+  brokenGain.connect(distortion);
+  distortion.connect(tremoloGain);
+  distortion.connect(delay);
+  delay.connect(delayFeedback);
+  delayFeedback.connect(delay);
+  delay.connect(delayWet);
+  delayWet.connect(tremoloGain);
+  tremoloOsc.connect(tremoloDepth);
+  tremoloDepth.connect(tremoloGain.gain);
+  if (spatialPanner) {
+    tremoloGain.connect(spatialPanner);
+    spatialPanner.connect(masterGain);
+  } else {
+    tremoloGain.connect(masterGain);
+  }
+  side4AnchorGain.connect(masterGain);
+  side4NaturalGain.connect(side4ChopGain);
+  side4FragmentGain.connect(side4ShardFilter);
+  side4ShardFilter.connect(side4ShardDrive);
+  side4ShardDrive.connect(side4ChopGain);
+  side4StructuralGrainGain.connect(side4ChopGain);
+  side4ArtifactSource.connect(side4ArtifactFilter);
+  side4ArtifactFilter.connect(side4ArtifactGain);
+  side4ArtifactGain.connect(side4ChopGain);
+  side4ChopGain.connect(masterGain);
+  side4Delay.connect(side4DelayFeedback);
+  side4DelayFeedback.connect(side4Delay);
+  side4Delay.connect(side4DelayWet);
+  side4DelayWet.connect(masterGain);
+  masterGain.connect(limiter);
+  limiter.connect(context.destination);
+  tremoloOsc.start();
+  side4ArtifactSource.start();
+
+  return {
+    sourceBus,
+    synthGain,
+    sampleGain,
+    pureGain,
+    brokenGain,
+    toneFilter,
+    delay,
+    delayWet,
+    tremoloGain,
+    tremoloOsc,
+    tremoloDepth,
+    side4AnchorGain,
+    side4NaturalGain,
+    side4FragmentGain,
+    side4StructuralGrainGain,
+    side4ToneFilter,
+    side4ShardFilter,
+    side4ShardDrive,
+    side4ChopGain,
+    side4Delay,
+    side4DelayFeedback,
+    side4DelayWet,
+    side4ArtifactFilter,
+    side4ArtifactGain,
+    spatialPanner,
+    masterGain,
+    voices: []
+  };
+}
+
+function createSyntheticChoirVoices(context, nodes) {
+  // This is a legal placeholder, not a sampled choir. It keeps the sound layer
+  // functional until a clearly licensed children's choir recording is added.
+  const voiceFrequencies = [392, 523.25, 587.33, 659.25, 783.99];
+
+  voiceFrequencies.forEach((frequency, index) => {
+    const oscillator = context.createOscillator();
+    const voiceGain = context.createGain();
+    const seed = hash1(index, 811);
+
+    oscillator.type = index % 2 ? "sine" : "triangle";
+    oscillator.frequency.value = frequency;
+    oscillator.detune.value = lerp(-8, 8, seed);
+    voiceGain.gain.value = index === 0 ? 0.075 : lerp(0.035, 0.06, seed);
+    oscillator.connect(voiceGain);
+    voiceGain.connect(nodes.synthGain);
+    oscillator.start();
+
+    nodes.voices.push({
+      oscillator,
+      baseFrequency: frequency,
+      baseDetune: oscillator.detune.value,
+      splitDirection: index - (voiceFrequencies.length - 1) * 0.5
+    });
+  });
+}
+
+async function loadChoirAudioSampleIfNeeded() {
+  if (!CHOIR_AUDIO_URL || !audioContext || !audioNodes) return;
+
+  if (/^https?:\/\//i.test(CHOIR_AUDIO_URL)) {
+    console.warn("Use a local choir file inside this project folder, not a remote audio URL.");
+    return;
+  }
+
+  try {
+    const response = await fetch(CHOIR_AUDIO_URL);
+    if (!response.ok) throw new Error(`Audio request failed: ${response.status}`);
+
+    const arrayBuffer = await response.arrayBuffer();
+    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+    startChoirSampleLoop(audioBuffer);
+  } catch (error) {
+    console.warn("Choir sample could not be loaded. Using synthetic fallback.", error);
+  }
+}
+
+function startChoirSampleLoop(audioBuffer) {
+  if (!audioContext || !audioNodes || audioSampleSource) return;
+
+  audioSampleSource = audioContext.createBufferSource();
+  audioSampleSource.buffer = audioBuffer;
+  audioSampleSource.loop = true;
+  audioSampleSource.connect(audioNodes.sampleGain);
+  audioSampleSource.start();
+
+  const time = audioContext.currentTime;
+  audioNodes.sampleGain.gain.setTargetAtTime(0.9, time, 1.2);
+  audioNodes.synthGain.gain.setTargetAtTime(0.04, time, 1.8);
+}
+
+function setupSide4SoundtrackSource(context, nodes) {
+  if (!context || !nodes) return;
+
+  side4SoundtrackSource = null;
+  side4SoundtrackFadingSource = null;
+  side4SoundtrackActive = false;
+  side4SoundtrackStopScheduled = false;
+  side4SoundtrackOffset = 0;
+  side4SoundtrackPlaybackPosition = 0;
+  side4SoundtrackLastPositionAt = context.currentTime;
+  side4SoundtrackPlaybackRate = 1;
+  side4NextStructuralGrainAt = 0;
+  side4StructuralGrainSerial = 0;
+  side4FragmentWindowIndex = -1;
+  side4FreezeUntil = 0;
+}
+
+async function loadSide4SoundtrackIfNeeded() {
+  if (side4SoundtrackBuffer || side4SoundtrackLoading || !audioContext || !audioNodes) return;
+
+  if (/^https?:\/\//i.test(SIDE4_SOUNDTRACK_URL)) {
+    console.warn("Use a local Side 4 soundtrack file inside this project folder, not a remote audio URL.");
+    return;
+  }
+
+  side4SoundtrackLoading = true;
+
+  try {
+    const response = await fetch(SIDE4_SOUNDTRACK_URL);
+    if (!response.ok) throw new Error(`Side 4 soundtrack request failed: ${response.status}`);
+
+    const arrayBuffer = await response.arrayBuffer();
+    side4SoundtrackBuffer = await audioContext.decodeAudioData(arrayBuffer);
+    side4SoundtrackOffset = 0;
+    side4SoundtrackPlaybackPosition = 0;
+    side4SoundtrackLastPositionAt = audioContext.currentTime;
+
+    if (selectedSideNumber === 4 && audioStarted && smoothstep(0.2, 0.36, latestProgress || 0) > 0.001) {
+      startSide4SoundtrackPlayback(audioContext.currentTime);
+    }
+  } catch (error) {
+    console.warn("Side 4 soundtrack could not be loaded. Side 4 will remain silent until the local file is available.", error);
+  } finally {
+    side4SoundtrackLoading = false;
+  }
+}
+
+function startSide4SoundtrackPlayback(time) {
+  if (!audioContext || !audioNodes || !side4SoundtrackBuffer || side4SoundtrackSource) return;
+
+  const duration = side4SoundtrackBuffer.duration || 0;
+  if (duration <= 0) return;
+
+  const offset = wrapAudioOffset(side4SoundtrackOffset || side4SoundtrackPlaybackPosition || 0, duration);
+  const voice = createSide4SoundtrackVoice(offset, time, 0.16);
+
+  if (!voice) return;
+
+  side4SoundtrackSource = voice;
+  side4SoundtrackActive = true;
+  side4SoundtrackStopScheduled = false;
+  side4SoundtrackStartedAt = time - offset;
+  side4SoundtrackPlaybackPosition = offset;
+  side4SoundtrackLastPositionAt = time;
+}
+
+function createSide4SoundtrackVoice(offset, time, fadeInSeconds) {
+  if (!audioContext || !audioNodes || !side4SoundtrackBuffer) return null;
+
+  const duration = side4SoundtrackBuffer.duration || 0;
+  if (duration <= 0) return null;
+
+  const startTime = Math.max(audioContext.currentTime, time);
+  const source = audioContext.createBufferSource();
+  const voiceGain = audioContext.createGain();
+  const voice = {
+    source,
+    gain: voiceGain,
+    offset: wrapAudioOffset(offset, duration),
+    startedAt: startTime,
+    stopScheduled: false
+  };
+
+  source.buffer = side4SoundtrackBuffer;
+  source.loop = false;
+  source.playbackRate.value = Math.max(0.02, side4SoundtrackPlaybackRate || 1);
+  source.connect(voiceGain);
+  voiceGain.connect(audioNodes.side4AnchorGain);
+  voiceGain.connect(audioNodes.side4NaturalGain);
+  voiceGain.connect(audioNodes.side4FragmentGain);
+
+  voiceGain.gain.setValueAtTime(fadeInSeconds > 0 ? 0 : 1, startTime);
+  if (fadeInSeconds > 0) {
+    voiceGain.gain.linearRampToValueAtTime(1, startTime + fadeInSeconds);
+  }
+
+  source.onended = () => {
+    if (side4SoundtrackSource === voice) {
+      side4SoundtrackSource = null;
+      if (side4SoundtrackActive && !voice.stopScheduled) {
+        side4SoundtrackPlaybackPosition = 0;
+        side4SoundtrackOffset = 0;
+        side4SoundtrackLastPositionAt = audioContext ? audioContext.currentTime : 0;
+      }
+    }
+    if (side4SoundtrackFadingSource === voice) {
+      side4SoundtrackFadingSource = null;
+    }
+    side4SoundtrackStopScheduled = false;
+  };
+
+  source.start(startTime, voice.offset);
+
+  return voice;
+}
+
+function fadeOutSide4SoundtrackVoice(voice, time, fadeSeconds) {
+  if (!voice || voice.stopScheduled) return;
+
+  const stopTime = Math.max(audioContext ? audioContext.currentTime : time, time);
+  const fade = Math.max(0.01, fadeSeconds);
+  const gain = voice.gain.gain;
+
+  if (typeof gain.cancelAndHoldAtTime === "function") {
+    gain.cancelAndHoldAtTime(stopTime);
+  } else {
+    gain.cancelScheduledValues(stopTime);
+    gain.setValueAtTime(gain.value, stopTime);
+  }
+  gain.linearRampToValueAtTime(0, stopTime + fade);
+
+  voice.stopScheduled = true;
+  voice.fadeEndsAt = stopTime + fade + 0.08;
+  try {
+    voice.source.stop(stopTime + fade + 0.08);
+  } catch (error) {
+    // The voice may have already ended naturally at the buffer boundary.
+  }
+}
+
+function cleanupSide4FadingSoundtrackVoice(time) {
+  if (!side4SoundtrackFadingSource) return;
+
+  const cleanupTime = Math.max(audioContext ? audioContext.currentTime : time, time);
+  if (side4SoundtrackFadingSource.stopScheduled && cleanupTime > (side4SoundtrackFadingSource.fadeEndsAt || 0) + 0.16) {
+    side4SoundtrackFadingSource = null;
+  }
+}
+
+function crossfadeSide4SoundtrackLoop(time) {
+  cleanupSide4FadingSoundtrackVoice(time);
+  if (!audioContext || !side4SoundtrackSource || side4SoundtrackFadingSource || !side4SoundtrackBuffer) return;
+
+  const duration = side4SoundtrackBuffer.duration || 0;
+  if (duration <= SIDE4_SOUNDTRACK_LOOP_CROSSFADE_SECONDS * 1.4) return;
+
+  const playbackRate = Math.max(0.04, side4SoundtrackPlaybackRate || 1);
+  const secondsToEnd = (duration - side4SoundtrackPlaybackPosition) / playbackRate;
+  if (secondsToEnd > SIDE4_SOUNDTRACK_LOOP_CROSSFADE_SECONDS) return;
+
+  const crossfadeTime = Math.max(audioContext.currentTime, time);
+  const previousVoice = side4SoundtrackSource;
+  const nextVoice = createSide4SoundtrackVoice(0, crossfadeTime, SIDE4_SOUNDTRACK_LOOP_CROSSFADE_SECONDS);
+  if (!nextVoice) return;
+
+  side4SoundtrackFadingSource = previousVoice;
+  side4SoundtrackSource = nextVoice;
+  fadeOutSide4SoundtrackVoice(previousVoice, crossfadeTime, SIDE4_SOUNDTRACK_LOOP_CROSSFADE_SECONDS);
+
+  side4SoundtrackPlaybackPosition = 0;
+  side4SoundtrackOffset = 0;
+  side4SoundtrackLastPositionAt = crossfadeTime;
+  side4SoundtrackStartedAt = crossfadeTime;
+}
+
+function setSide4SoundtrackPlaybackRate(playbackRate, time, timeConstant) {
+  const safeRate = Math.max(0.02, playbackRate);
+
+  if (side4SoundtrackSource) {
+    side4SoundtrackSource.source.playbackRate.setTargetAtTime(safeRate, time, timeConstant);
+  }
+  if (side4SoundtrackFadingSource) {
+    side4SoundtrackFadingSource.source.playbackRate.setTargetAtTime(safeRate, time, timeConstant);
+  }
+}
+
+function pauseSide4SoundtrackPlayback(time) {
+  if (!audioContext || (!side4SoundtrackSource && !side4SoundtrackFadingSource) || side4SoundtrackStopScheduled) return;
+
+  advanceSide4SoundtrackPlaybackPosition(time);
+  side4SoundtrackOffset = side4SoundtrackPlaybackPosition;
+
+  side4SoundtrackActive = false;
+  side4SoundtrackStopScheduled = true;
+  side4SoundtrackStartedAt = 0;
+  side4SoundtrackPlaybackRate = 1;
+
+  fadeOutSide4SoundtrackVoice(side4SoundtrackSource, time, 0.08);
+  fadeOutSide4SoundtrackVoice(side4SoundtrackFadingSource, time, 0.08);
+  side4SoundtrackSource = null;
+  side4SoundtrackFadingSource = null;
+}
+
+function advanceSide4SoundtrackPlaybackPosition(time) {
+  if (!side4SoundtrackBuffer || !Number.isFinite(time)) return;
+
+  const duration = side4SoundtrackBuffer.duration || 0;
+  if (duration <= 0) return;
+
+  const dt = clamp(time - (side4SoundtrackLastPositionAt || time), 0, 0.32);
+  side4SoundtrackPlaybackPosition = wrapAudioOffset(
+    side4SoundtrackPlaybackPosition + dt * Math.max(0.02, side4SoundtrackPlaybackRate),
+    duration
+  );
+  side4SoundtrackLastPositionAt = time;
+  side4SoundtrackOffset = side4SoundtrackPlaybackPosition;
+  crossfadeSide4SoundtrackLoop(time);
+}
+
+function updateInteractiveAudioFromPose(now) {
+  if (!audioStarted) return;
+
+  const gestureControls = getAudioGestureControlsFromPose();
+  const movement = clamp(latestPoseMotionAmount / SOUND_MOVEMENT_FULL_SPEED, 0, 1);
+
+  setInteractiveAudioTargets(
+    gestureControls.leftPresence,
+    gestureControls.rightMovement,
+    movement,
+    now
+  );
+}
+
+function setInteractiveAudioTargets(leftPresence, rightMovement, movement, now) {
+  audioTargetLeftPresence = clamp(leftPresence, 0, 1);
+  audioTargetRightMovement = clamp(rightMovement, 0, 1);
+  audioTargetMovement = clamp(movement, 0, 1);
+
+  if (audioStarted) {
+    updateInteractiveAudio(now);
+  }
+}
+
+function getAudioGestureControlsFromPose() {
+  const leftPresence = getAudioSingleHandHeight("left");
+  const rightMovement = getAudioSingleHandHeight("right");
+
+  return {
+    leftPresence,
+    rightMovement
+  };
+}
+
+function getAudioSingleHandHeight(side) {
+  const wrist = getPosePoint(side === "left" ? POSE_LANDMARKS.leftWrist : POSE_LANDMARKS.rightWrist);
+  if (!wrist) return 0;
+
+  const leftHip = getPosePoint(POSE_LANDMARKS.leftHip);
+  const rightHip = getPosePoint(POSE_LANDMARKS.rightHip);
+  const leftShoulder = getPosePoint(POSE_LANDMARKS.leftShoulder);
+  const rightShoulder = getPosePoint(POSE_LANDMARKS.rightShoulder);
+  const nose = getPosePoint(POSE_LANDMARKS.nose);
+
+  const hipY = leftHip && rightHip
+    ? (leftHip.y + rightHip.y) * 0.5
+    : canvas.height * 0.72;
+  const shoulderY = leftShoulder && rightShoulder
+    ? (leftShoulder.y + rightShoulder.y) * 0.5
+    : canvas.height * 0.42;
+  const torsoHeight = Math.max(48, Math.abs(hipY - shoulderY));
+  const highY = nose
+    ? Math.min(nose.y, shoulderY) - torsoHeight * 0.26
+    : shoulderY - torsoHeight * 0.42;
+  const lowY = hipY + torsoHeight * 0.16;
+  const range = Math.max(48, lowY - highY);
+
+  return smoothstep(0.04, 0.96, clamp((lowY - wrist.y) / range, 0, 1));
+}
+
+function updateInteractiveAudio(now) {
+  if (!audioContext || !audioNodes) return;
+
+  const dt = audioLastUpdateAt
+    ? clamp((now - audioLastUpdateAt) / 1000, 0.001, 0.25)
+    : 0.016;
+  audioLastUpdateAt = now;
+
+  const handBlend = 1 - Math.exp(-dt / SOUND_HAND_SMOOTHING_SECONDS);
+  const movementBlend = 1 - Math.exp(-dt / SOUND_MOVEMENT_SMOOTHING_SECONDS);
+
+  audioSmoothedLeftPresence = lerp(audioSmoothedLeftPresence, audioTargetLeftPresence, handBlend);
+  audioSmoothedRightMovement = lerp(audioSmoothedRightMovement, audioTargetRightMovement, handBlend);
+  audioSmoothedMovement = lerp(audioSmoothedMovement, audioTargetMovement, movementBlend);
+  audioFractureEnergy = Math.max(audioSmoothedMovement, audioFractureEnergy * Math.exp(-dt / 0.82));
+
+  const stageLimit = bodyIsPresent ? getAudioStageIntensityLimit() : 0;
+  const leftPresence = bodyIsPresent ? audioSmoothedLeftPresence : 0;
+  const rightMovement = bodyIsPresent ? audioSmoothedRightMovement : 0;
+  const movement = bodyIsPresent ? audioSmoothedMovement : 0;
+  const time = audioContext.currentTime;
+
+  if (selectedSideNumber === 4) {
+    updateSide4SoundtrackAudio(now, time, dt, leftPresence, rightMovement, movement);
+    return;
+  }
+
+  muteSide4SoundtrackAudio(time);
+
+  const presence = smoothstep(0.04, 1, leftPresence);
+  const innerMotion = smoothstep(0.04, 1, rightMovement);
+  const stagePresence = presence * stageLimit;
+  const stageMotion = innerMotion * stageLimit;
+  const stageGesture = movement * stageLimit;
+  const fragmentation = clamp(
+    stageLimit * (
+      Math.pow(stageMotion, 1.26) * SOUND_FRAGMENTATION_AMOUNT
+        + audioFractureEnergy * SOUND_MOVEMENT_FRAGMENTATION
+    ),
+    0,
+    stageLimit
+  );
+  const volume = bodyIsPresent
+    ? SOUND_MASTER_VOLUME * (
+      SOUND_BASE_VOLUME * stageLimit
+        + SOUND_HAND_VOLUME * Math.pow(stagePresence, SOUND_LEFT_PRESENCE_POWER)
+    )
+    : 0;
+  const pitchRate = 1 + stageLimit * (presence * SOUND_PITCH_RISE * 0.72 + innerMotion * SOUND_PITCH_RISE * 0.28 + movement * 0.014);
+  const brightness = lerp(SOUND_BRIGHTNESS_LOW, SOUND_BRIGHTNESS_HIGH, clamp(stagePresence * 0.78 + stageLimit * 0.08, 0, 1));
+  const tremoloDepth = clamp(stageMotion * SOUND_RIGHT_TREMOLO_DEPTH + stageGesture * 0.16, 0, 0.78 * Math.max(0.25, stageLimit));
+  const tremoloRate = lerp(SOUND_TREMOLO_RATE_LOW, SOUND_TREMOLO_RATE_HIGH, Math.pow(clamp(stageMotion + stageGesture * 0.22, 0, 1), 1.18));
+  const spatialPan = Math.sin(now * 0.00042 + innerMotion * 1.7) * SOUND_STEREO_WIDTH_MAX * stagePresence * (0.24 + innerMotion * 0.76);
+
+  audioNodes.masterGain.gain.setTargetAtTime(volume, time, 0.16);
+  audioNodes.pureGain.gain.setTargetAtTime(lerp(0.92, 0.38, fragmentation), time, 0.22);
+  audioNodes.brokenGain.gain.setTargetAtTime(lerp(0.015, 0.72, fragmentation), time, 0.22);
+  audioNodes.toneFilter.frequency.setTargetAtTime(brightness, time, 0.32);
+  audioNodes.delay.delayTime.setTargetAtTime(lerp(SOUND_DELAY_TIME_LOW, SOUND_DELAY_TIME_HIGH, fragmentation), time, 0.22);
+  audioNodes.delayWet.gain.setTargetAtTime(SOUND_DELAY_WET_MAX * clamp(fragmentation + stagePresence * 0.08, 0, 1), time, 0.28);
+  audioNodes.tremoloGain.gain.setTargetAtTime(1 - tremoloDepth * 0.5, time, 0.12);
+  audioNodes.tremoloDepth.gain.setTargetAtTime(tremoloDepth * 0.5, time, 0.12);
+  audioNodes.tremoloOsc.frequency.setTargetAtTime(tremoloRate, time, 0.18);
+  if (audioNodes.spatialPanner) {
+    audioNodes.spatialPanner.pan.setTargetAtTime(spatialPan, time, 0.24);
+  }
+
+  audioNodes.voices.forEach((voice) => {
+    const split = voice.splitDirection * fragmentation * 8;
+    voice.oscillator.frequency.setTargetAtTime(voice.baseFrequency * pitchRate, time, 0.24);
+    voice.oscillator.detune.setTargetAtTime(voice.baseDetune + split, time, 0.26);
+  });
+
+  if (audioSampleSource) {
+    audioSampleSource.playbackRate.setTargetAtTime(pitchRate, time, 0.28);
+  }
+}
+
+function updateSide4SoundtrackAudio(now, time, dt, leftPresence, rightMovement, movement) {
+  muteSide1InteractiveAudioForSide4(time);
+
+  if (!side4SoundtrackBuffer) {
+    loadSide4SoundtrackIfNeeded();
+    audioNodes.masterGain.gain.setTargetAtTime(0, time, 0.18);
+    return;
+  }
+
+  const stageAudioPresence = bodyIsPresent ? smoothstep(0.2, 0.36, latestProgress || 0) : 0;
+  if (stageAudioPresence <= 0.001) {
+    silenceSide4SoundtrackForStageOne(time);
+    return;
+  }
+
+  startSide4SoundtrackPlayback(time);
+  advanceSide4SoundtrackPlaybackPosition(time);
+
+  const presence = bodyIsPresent ? smoothstep(0.03, 1, leftPresence) : 0;
+  const destructionGesture = bodyIsPresent ? getSide4DestructionGesture(rightMovement) : 0;
+  const destructionBlend = 1 - Math.exp(-dt / SIDE4_SOUNDTRACK_DESTRUCTION_SMOOTHING_SECONDS);
+
+  side4SmoothedDestruction = lerp(side4SmoothedDestruction, destructionGesture, destructionBlend);
+
+  const destruction = clamp(side4SmoothedDestruction, 0, 1);
+  const breakup = Math.pow(smoothstep(0.006, 1, destruction), 0.92);
+  const volume = bodyIsPresent
+    ? stageAudioPresence * SIDE4_SOUNDTRACK_MASTER_VOLUME
+      * (SIDE4_SOUNDTRACK_BASE_VOLUME + SIDE4_SOUNDTRACK_HAND_VOLUME * Math.pow(presence, SIDE4_SOUNDTRACK_VOLUME_POWER))
+    : 0;
+  const corruptionState = getSide4SoundtrackCorruptionState(now, time, breakup, movement);
+  const cleanLevel = lerp(1, SIDE4_SOUNDTRACK_CLEAN_MIN, Math.pow(breakup, 1.18));
+  const anchorLevel = lerp(0.32, SIDE4_SOUNDTRACK_ANCHOR_MAX, Math.pow(breakup, 0.78)) * corruptionState.anchorGate;
+  const eventLift = 1 + corruptionState.burst * 0.55 + corruptionState.lockup * 0.75;
+  const microloopLevel = SIDE4_SOUNDTRACK_MICROLOOP_MAX * Math.pow(breakup, 0.78) * eventLift;
+  const artifactLevel = SIDE4_SOUNDTRACK_ARTIFACT_MAX * corruptionState.crackle * eventLift;
+  updateSide4StructuralCorruption(time, breakup, corruptionState);
+
+  audioNodes.masterGain.gain.setTargetAtTime(volume, time, 0.14);
+  audioNodes.side4AnchorGain.gain.setTargetAtTime(anchorLevel, time, lerp(0.16, 0.045, breakup));
+  audioNodes.side4NaturalGain.gain.setTargetAtTime(cleanLevel, time, 0.1);
+  audioNodes.side4FragmentGain.gain.setTargetAtTime(0, time, 0.035);
+  audioNodes.side4StructuralGrainGain.gain.setTargetAtTime(
+    microloopLevel,
+    time,
+    lerp(0.12, 0.012, breakup)
+  );
+  audioNodes.side4ChopGain.gain.setTargetAtTime(corruptionState.gate, time, corruptionState.timeConstant);
+  audioNodes.side4ShardFilter.frequency.setTargetAtTime(2600, time, 0.08);
+  audioNodes.side4ShardFilter.Q.setTargetAtTime(1.2, time, 0.08);
+  audioNodes.side4ArtifactFilter.frequency.setTargetAtTime(lerp(7800, 2400, Math.pow(breakup, 0.76)), time, 0.018);
+  audioNodes.side4ArtifactGain.gain.setTargetAtTime(artifactLevel, time, lerp(0.04, 0.004, breakup));
+  audioNodes.side4DelayFeedback.gain.setTargetAtTime(0, time, 0.04);
+  audioNodes.side4DelayWet.gain.setTargetAtTime(0, time, 0.04);
+
+  if (side4SoundtrackSource || side4SoundtrackFadingSource) {
+    side4SoundtrackPlaybackRate = 1;
+    setSide4SoundtrackPlaybackRate(1, time, 0.06);
+  }
+}
+
+function muteSide4SoundtrackAudio(time) {
+  if (!audioNodes.side4NaturalGain) return;
+
+  audioNodes.side4AnchorGain.gain.setTargetAtTime(0, time, 0.08);
+  audioNodes.side4NaturalGain.gain.setTargetAtTime(0, time, 0.08);
+  audioNodes.side4FragmentGain.gain.setTargetAtTime(0, time, 0.08);
+  audioNodes.side4StructuralGrainGain.gain.setTargetAtTime(0, time, 0.04);
+  audioNodes.side4ArtifactGain.gain.setTargetAtTime(0, time, 0.04);
+  audioNodes.side4ChopGain.gain.setTargetAtTime(1, time, 0.08);
+  audioNodes.side4DelayFeedback.gain.setTargetAtTime(0, time, 0.1);
+  audioNodes.side4DelayWet.gain.setTargetAtTime(0, time, 0.1);
+  side4SmoothedDestruction = lerp(side4SmoothedDestruction, 0, 0.08);
+  side4FreezeUntil = 0;
+  resetSide4SoundtrackFailureEvents();
+
+  if (side4SoundtrackSource || side4SoundtrackActive) {
+    pauseSide4SoundtrackPlayback(time + 0.06);
+  }
+}
+
+function silenceSide4SoundtrackForStageOne(time) {
+  audioNodes.masterGain.gain.setTargetAtTime(0, time, 0.24);
+  audioNodes.side4AnchorGain.gain.setTargetAtTime(0, time, 0.08);
+  audioNodes.side4NaturalGain.gain.setTargetAtTime(0, time, 0.08);
+  audioNodes.side4FragmentGain.gain.setTargetAtTime(0, time, 0.08);
+  audioNodes.side4StructuralGrainGain.gain.setTargetAtTime(0, time, 0.04);
+  audioNodes.side4ArtifactGain.gain.setTargetAtTime(0, time, 0.04);
+  audioNodes.side4ChopGain.gain.setTargetAtTime(1, time, 0.08);
+  audioNodes.side4DelayFeedback.gain.setTargetAtTime(0, time, 0.1);
+  audioNodes.side4DelayWet.gain.setTargetAtTime(0, time, 0.1);
+  side4SmoothedDestruction = lerp(side4SmoothedDestruction, 0, 0.08);
+  side4FreezeUntil = 0;
+  resetSide4SoundtrackFailureEvents();
+
+  if (side4SoundtrackSource || side4SoundtrackActive) {
+    pauseSide4SoundtrackPlayback(time + 0.06);
+  }
+}
+
+function resetSide4SoundtrackFailureEvents() {
+  side4NextLockupAt = 0;
+  side4LockupStartedAt = 0;
+  side4LockupUntil = 0;
+  side4LockupOffset = 0;
+  side4LockupStrength = 0;
+  side4NextBurstAt = 0;
+  side4BurstStartedAt = 0;
+  side4BurstUntil = 0;
+  side4BurstStrength = 0;
+}
+
+function updateSide4SoundtrackFailureEvents(time, depth) {
+  const duration = side4SoundtrackBuffer ? side4SoundtrackBuffer.duration || 0 : 0;
+  if (depth <= 0.08 || duration <= 0) {
+    resetSide4SoundtrackFailureEvents();
+    return { lockup: 0, burst: 0 };
+  }
+
+  if (!side4NextBurstAt || side4NextBurstAt < time - 1) {
+    side4NextBurstAt = time
+      + lerp(3.8, 0.9, Math.pow(depth, 1.4)) * lerp(0.72, 1.55, hash1(side4StructuralGrainSerial, 2301));
+  }
+
+  if (time >= side4NextBurstAt && time >= side4BurstUntil) {
+    const seed = hash2(Math.floor(time * 7), side4StructuralGrainSerial, 2303);
+    const burstDuration = lerp(0.12, 0.72, Math.pow(depth, 1.25)) * lerp(0.62, 1.35, seed);
+    side4BurstStartedAt = time;
+    side4BurstUntil = time + burstDuration;
+    side4BurstStrength = clamp(lerp(0.28, 1, Math.pow(depth, 1.1)) * lerp(0.75, 1.16, seed), 0, 1);
+    side4NextBurstAt = time
+      + lerp(3.4, 0.85, Math.pow(depth, 1.35)) * lerp(0.75, 1.7, hash2(side4StructuralGrainSerial, seed * 1000, 2305));
+  }
+
+  if (!side4NextLockupAt || side4NextLockupAt < time - 1) {
+    side4NextLockupAt = time
+      + lerp(6.4, 1.4, Math.pow(depth, 1.55)) * lerp(0.7, 1.75, hash1(side4StructuralGrainSerial, 2311));
+  }
+
+  if (time >= side4NextLockupAt && time >= side4LockupUntil) {
+    const seed = hash2(Math.floor(time * 9), side4StructuralGrainSerial, 2313);
+    const lockDuration = lerp(0.075, 0.42, Math.pow(depth, 1.35)) * lerp(0.7, 1.35, seed);
+    const offsetNudge = (seed - 0.5) * lerp(0.018, 0.46, Math.pow(depth, 1.1));
+    side4LockupStartedAt = time;
+    side4LockupUntil = time + lockDuration;
+    side4LockupStrength = clamp(lerp(0.32, 1, Math.pow(depth, 1.18)) * lerp(0.72, 1.14, seed), 0, 1);
+    side4LockupOffset = wrapAudioOffset(side4SoundtrackPlaybackPosition + offsetNudge, duration);
+    side4NextLockupAt = time
+      + lerp(5.8, 1.15, Math.pow(depth, 1.5)) * lerp(0.82, 1.85, hash2(side4StructuralGrainSerial, seed * 1000, 2315));
+  }
+
+  const burstDuration = Math.max(0.001, side4BurstUntil - side4BurstStartedAt);
+  const burstAge = time - side4BurstStartedAt;
+  const burstRemaining = side4BurstUntil - time;
+  const burstFade = Math.min(0.1, burstDuration * 0.38);
+  const burst = burstRemaining > 0
+    ? side4BurstStrength * smoothstep(0, burstFade, burstAge) * smoothstep(0, burstFade, burstRemaining)
+    : 0;
+  const lockupDuration = Math.max(0.001, side4LockupUntil - side4LockupStartedAt);
+  const lockupAge = time - side4LockupStartedAt;
+  const lockupRemaining = side4LockupUntil - time;
+  const lockupFade = Math.min(0.035, lockupDuration * 0.42);
+  const lockup = lockupRemaining > 0
+    ? side4LockupStrength * smoothstep(0, lockupFade, lockupAge) * smoothstep(0, lockupFade, lockupRemaining)
+    : 0;
+
+  return {
+    lockup: clamp(lockup, 0, 1),
+    burst: clamp(burst, 0, 1)
+  };
+}
+
+function updateSide4StructuralCorruption(time, breakup, corruptionState) {
+  if (!audioContext || !audioNodes || !side4SoundtrackBuffer || breakup <= 0.018) {
+    side4NextStructuralGrainAt = 0;
+    if (audioNodes && audioNodes.side4StructuralGrainGain) {
+      audioNodes.side4StructuralGrainGain.gain.setTargetAtTime(0, time, 0.08);
+    }
+    return;
+  }
+
+  const baseDepth = Math.pow(clamp(breakup, 0, 1), 0.96);
+  const depth = clamp(baseDepth + corruptionState.burst * 0.22 + corruptionState.lockup * 0.32, 0, 1);
+  const interval = lerp(0.24, 0.018, Math.pow(depth, 0.98)) * lerp(1, 0.42, corruptionState.lockup);
+  const maxBursts = corruptionState.lockup > 0.05 ? 8 : depth > 0.8 ? 6 : depth > 0.48 ? 3 : 1;
+  let spawned = 0;
+
+  if (!side4NextStructuralGrainAt || side4NextStructuralGrainAt < time - 0.5) {
+    side4NextStructuralGrainAt = time + interval * lerp(0.18, 0.92, hash1(side4StructuralGrainSerial, 2201));
+  }
+
+  while (time >= side4NextStructuralGrainAt && spawned < maxBursts) {
+    const serial = side4StructuralGrainSerial;
+    const repeatCount = corruptionState.lockup > 0.05
+      ? 6 + Math.floor(Math.pow(depth, 1.05) * lerp(3, 9, hash1(serial, 2203)))
+      : corruptionState.stutter
+      ? 3 + Math.floor(Math.pow(depth, 1.18) * lerp(2, 8, hash1(serial, 2203)))
+      : 1 + Math.floor(Math.pow(depth, 1.46) * lerp(0, 5, hash1(serial, 2203)));
+    const jumpSpread = lerp(0.08, 3.2, Math.pow(depth, 1.02)) * lerp(1, 1.5, corruptionState.burst);
+    const baseOffset = wrapAudioOffset(
+      lerp(side4SoundtrackPlaybackPosition, corruptionState.lockupOffset, corruptionState.lockup)
+        + (hash1(serial, 2207) - 0.5) * jumpSpread
+        + corruptionState.jumpOffset,
+      side4SoundtrackBuffer.duration || 1
+    );
+
+    for (let i = 0; i < repeatCount; i += 1) {
+      spawnSide4MicroLoopGrain(time, depth, baseOffset, serial, i, corruptionState.lockup);
+    }
+
+    side4StructuralGrainSerial += 1;
+    spawned += 1;
+    side4NextStructuralGrainAt += interval * lerp(0.16, 0.92, hash1(side4StructuralGrainSerial, 2205));
+  }
+}
+
+function spawnSide4MicroLoopGrain(time, depth, baseOffset, serial, repeatIndex, lockup = 0) {
+  if (!audioContext || !audioNodes || !side4SoundtrackBuffer) return;
+
+  const duration = side4SoundtrackBuffer.duration || 0;
+  if (duration <= 0) return;
+
+  const seed = hash2(serial, repeatIndex, 2211);
+  const seedB = hash2(serial + 19, repeatIndex, 2213);
+  const seedC = hash2(serial + 41, repeatIndex, 2215);
+  const looseGrainSeconds = lerp(0.26, 0.032, Math.pow(depth, 0.96)) * lerp(0.7, 1.35, seed);
+  const lockedGrainSeconds = lerp(0.045, 0.115, Math.pow(depth, 0.7)) * lerp(0.82, 1.18, seed);
+  const grainSeconds = lerp(looseGrainSeconds, lockedGrainSeconds, lockup);
+  const startDelay = repeatIndex * grainSeconds * lerp(0.16, 0.72, seedB) * lerp(1, 0.44, lockup);
+  const startTime = Math.max(audioContext.currentTime, time + startDelay);
+  const source = audioContext.createBufferSource();
+  const grainGain = audioContext.createGain();
+  const repeatSlip = repeatIndex * lerp(0.004, 0.075, Math.pow(depth, 0.98)) * lerp(1, 0.16, lockup) * (seedC > 0.5 ? 1 : -1);
+  const sourceWander = (seed - 0.5) * lerp(0.01, 0.28, depth) * lerp(1, 0.18, lockup);
+  const sourceOffset = wrapAudioOffset(baseOffset + repeatSlip + sourceWander, duration);
+  const grainGainValue = lerp(0.045, 0.36, Math.pow(depth, 0.7)) * lerp(1, 1.28, lockup) * lerp(0.62, 1.2, seedB);
+  const attack = Math.min(grainSeconds * 0.28, lerp(0.01, 0.0015, depth));
+  const release = Math.min(grainSeconds * 0.34, lerp(0.018, 0.002, depth));
+  const holdEnd = startTime + Math.max(attack + 0.002, grainSeconds - release);
+  const endTime = startTime + grainSeconds;
+
+  source.buffer = side4SoundtrackBuffer;
+  source.playbackRate.value = 1;
+
+  grainGain.gain.setValueAtTime(0, startTime);
+  grainGain.gain.linearRampToValueAtTime(grainGainValue, startTime + attack);
+  grainGain.gain.setValueAtTime(grainGainValue, holdEnd);
+  grainGain.gain.linearRampToValueAtTime(0, endTime);
+
+  source.connect(grainGain);
+  grainGain.connect(audioNodes.side4StructuralGrainGain);
+
+  try {
+    source.start(startTime, sourceOffset, grainSeconds);
+    source.stop(endTime + 0.04);
+  } catch (error) {
+    // Very short fragments can become invalid if the audio clock advances mid-schedule.
+  }
+}
+
+function getSide4SoundtrackCorruptionState(now, time, breakup, movement) {
+  const baseDepth = Math.pow(clamp(breakup, 0, 1), 1.04);
+  const events = updateSide4SoundtrackFailureEvents(time, baseDepth);
+  const depth = clamp(baseDepth + events.burst * 0.28 + events.lockup * 0.42, 0, 1);
+  if (depth <= 0.001) {
+    return {
+      gate: 1,
+      anchorGate: 1,
+      seed: 0.5,
+      crackle: 0,
+      stutter: false,
+      jumpOffset: 0,
+      lockup: 0,
+      lockupOffset: 0,
+      burst: 0,
+      timeConstant: 0.08
+    };
+  }
+
+  const windowMs = lerp(430, 22, Math.pow(depth, 0.96));
+  const windowIndex = Math.floor(now / windowMs);
+  const phase = (now / windowMs) % 1;
+  const seed = hash2(windowIndex, Math.floor(depth * 1000), 2029);
+  const seedB = hash2(windowIndex + 13, Math.floor(movement * 1000), 2039);
+  const stutter = events.lockup > 0.04 || seed > lerp(0.86, 0.18, Math.pow(depth, 1.02));
+  const dropoutWidth = lerp(0.022, 0.31, Math.pow(depth, 1.04)) + events.burst * 0.08 + events.lockup * 0.12;
+  const dropoutActive = events.lockup > 0.12 || phase < dropoutWidth || (stutter && Math.abs(phase - 0.5) < dropoutWidth * 0.62);
+  const dropoutDepth = dropoutActive ? Math.pow(depth, 1.05) * lerp(0.38, 1, seedB) : 0;
+  const gate = clamp((1 - dropoutDepth * lerp(0.54, 1.24, depth)) * lerp(1, 0.24, events.lockup), 0.028, 1);
+  const anchorGate = clamp((1 - dropoutDepth * lerp(0.1, 0.32, depth)) * lerp(1, 0.58, events.lockup), 0.52, 1);
+  const crackleWindow = phase < lerp(0.034, 0.42, Math.pow(depth, 0.78))
+    || Math.abs(phase - 0.5) < lerp(0.014, 0.14, depth);
+  const crackle = crackleWindow
+    ? Math.pow(depth, 0.82) * lerp(0.42, 1.2, seed) + events.burst * 0.38 + events.lockup * 0.3
+    : Math.pow(depth, 2.05) * 0.14 * seedB + events.burst * 0.2;
+  const jumpOffset = stutter
+    ? (hash2(windowIndex + 31, Math.floor(depth * 1000), 2041) - 0.5) * lerp(0.08, 2.4, Math.pow(depth, 1.02)) * lerp(1, 1.65, events.burst)
+    : 0;
+
+  return {
+    gate,
+    anchorGate,
+    seed,
+    crackle,
+    stutter,
+    jumpOffset,
+    lockup: events.lockup,
+    lockupOffset: side4LockupOffset,
+    burst: events.burst,
+    timeConstant: lerp(0.055, 0.006, depth)
+  };
+}
+
+function muteSide1InteractiveAudioForSide4(time) {
+  audioNodes.synthGain.gain.setTargetAtTime(0, time, 0.14);
+  audioNodes.sampleGain.gain.setTargetAtTime(0, time, 0.14);
+  audioNodes.pureGain.gain.setTargetAtTime(0, time, 0.12);
+  audioNodes.brokenGain.gain.setTargetAtTime(0, time, 0.12);
+  audioNodes.delayWet.gain.setTargetAtTime(0, time, 0.16);
+  audioNodes.tremoloGain.gain.setTargetAtTime(1, time, 0.12);
+  audioNodes.tremoloDepth.gain.setTargetAtTime(0, time, 0.12);
+}
+
+function getSide4DestructionGesture(handHeight) {
+  const height = clamp(handHeight, 0, 1);
+  const gradualBreakup = Math.pow(height, 1.55) * 0.5;
+  const upperBreakup = Math.pow(height, 4.2) * 0.5;
+
+  return clamp(gradualBreakup + upperBreakup, 0, 1);
+}
+
+function wrapAudioOffset(offset, duration) {
+  if (duration <= 0) return 0;
+
+  return ((offset % duration) + duration) % duration;
+}
+
+function getAudioStageIntensityLimit() {
+  const stage = getStage(latestProgress || 0);
+  return SOUND_STAGE_MAX_INTENSITY[stage] ?? 0;
+}
+
+function createChoirDistortionCurve(amount) {
+  const curve = new Float32Array(2048);
+
+  for (let i = 0; i < curve.length; i += 1) {
+    const x = (i / (curve.length - 1)) * 2 - 1;
+    curve[i] = ((1 + amount) * x) / (1 + amount * Math.abs(x));
+  }
+
+  return curve;
+}
+
+function createSide4CrackleBuffer(context) {
+  const sampleRate = context.sampleRate || 44100;
+  const length = Math.max(1, Math.floor(sampleRate * 1.25));
+  const buffer = context.createBuffer(1, length, sampleRate);
+  const data = buffer.getChannelData(0);
+  let burst = 0;
+  let polarity = 1;
+
+  for (let i = 0; i < length; i += 1) {
+    if (Math.random() < 0.018) {
+      burst = Math.random() * Math.random();
+      polarity = Math.random() > 0.5 ? 1 : -1;
+    }
+
+    const grit = (Math.random() * 2 - 1) * burst;
+    const scrape = Math.sin(i * 0.19 + Math.sin(i * 0.011) * 4.5) * burst * 0.32;
+    data[i] = (grit + scrape) * polarity * 0.48;
+    burst *= 0.86;
+  }
+
+  return buffer;
 }
 
 function ensureCameraIsAvailable() {
@@ -2471,6 +3761,9 @@ function handlePoseResults(results) {
   if (latestPoseVisibleCount >= POSE_MIN_VISIBLE_LANDMARKS) {
     lastPoseSeenAt = now;
     addPoseMotionTrails(latestPoseScreenLandmarks, now);
+    updateInteractiveAudioFromPose(now);
+  } else {
+    setInteractiveAudioTargets(0, 0, 0, now);
   }
 
   previousPoseScreenLandmarks = latestPoseScreenLandmarks.map((point) => ({ ...point }));
@@ -2544,6 +3837,7 @@ function resetTransformation() {
   manualStage = null;
   trailFragments.length = 0;
   previousPoseScreenLandmarks = null;
+  resetSide4TemporalMemory();
 }
 
 // -----------------------------------------------------------------------------
@@ -2553,9 +3847,13 @@ function resetTransformation() {
 function renderFrame(now) {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   drawCameraBackground();
-  captureCameraMemoryFrame(now);
+  if (selectedSideNumber !== 4) {
+    captureCameraMemoryFrame(now);
+  }
 
   if (!bodyIsPresent) {
+    setInteractiveAudioTargets(0, 0, 0, now);
+    updateInteractiveAudio(now);
     updateStatusText("Waiting", "No body");
     return;
   }
@@ -2565,6 +3863,13 @@ function renderFrame(now) {
     : manualStage
       ? MANUAL_STAGE_PROGRESS[manualStage]
       : getTransformationProgress(now);
+
+  if (selectedSideNumber === 4) {
+    drawSide4TemporalMemory(latestProgress, now);
+    updateStatusText("", "");
+    updateInteractiveAudio(now);
+    return;
+  }
 
   if (!BASIC_PROTOTYPE_ONLY) {
     drawDigitalVolumeLayer(ctx, latestProgress, now, "behind");
@@ -2581,10 +3886,1166 @@ function renderFrame(now) {
   }
 
   updateStatusText("", "");
+  updateInteractiveAudio(now);
 }
 
 function drawCameraBackground() {
   drawSourceCover(ctx, video);
+}
+
+// -----------------------------------------------------------------------------
+// SIDE 4 TEMPORAL MEMORY VISUALS
+// -----------------------------------------------------------------------------
+
+function drawSide4TemporalMemory(progress, now) {
+  recordSide4RoomMemoryFrame(now);
+  updateSide4RoomMemoryLayers(progress, now);
+  drawSide4RoomMemoryLayers(ctx, progress, now);
+  drawSide4EyeVoid(ctx, progress, now);
+}
+
+function resetSide4TemporalMemory() {
+  side4PoseMemory.length = 0;
+  side4MemoryFragments.length = 0;
+  releaseSide4RoomMemoryFrames();
+  side4RoomMemoryLayers.length = 0;
+  side4LastPoseMemoryRecordAt = 0;
+  side4NextMemoryFragmentAt = 0;
+  side4MemoryFragmentSerial = 0;
+  side4LastMemoryStage = 0;
+  side4LastRoomMemoryRecordAt = 0;
+  side4NextRoomSnapshotAt = 0;
+  side4NextRoomNonlinearAt = 0;
+  side4NextRoomMirrorAt = 0;
+  side4NextRoomInvertedAt = 0;
+  side4NextRoomDeepAt = 0;
+  side4RoomMemorySerial = 0;
+  side4RoomLivingLayer = null;
+  side4RoomOldLayer = null;
+}
+
+function releaseSide4RoomMemoryFrames() {
+  while (side4RoomMemoryFrames.length) {
+    const frame = side4RoomMemoryFrames.pop();
+    frame.time = 0;
+    side4RoomMemoryFramePool.push(frame);
+  }
+}
+
+function recordSide4RoomMemoryFrame(now) {
+  if (!video.videoWidth || !video.videoHeight || !canvas.width || !canvas.height) return;
+  if (side4RoomMemoryFrames.length > 0 && now - side4LastRoomMemoryRecordAt < SIDE4_ROOM_MEMORY_CAPTURE_INTERVAL_MS) return;
+
+  const frame = side4RoomMemoryFramePool.length
+    ? side4RoomMemoryFramePool.pop()
+    : side4RoomMemoryFrames.shift();
+
+  if (!frame || !frame.canvas || !frame.ctx) return;
+
+  frame.ctx.clearRect(0, 0, frame.canvas.width, frame.canvas.height);
+  drawSourceCoverToCanvas(frame.ctx, video, frame.canvas.width, frame.canvas.height);
+  frame.time = now;
+  side4RoomMemoryFrames.push(frame);
+  side4LastRoomMemoryRecordAt = now;
+
+  const oldestAllowed = now - SIDE4_ROOM_MEMORY_DURATION;
+  while (side4RoomMemoryFrames.length && side4RoomMemoryFrames[0].time < oldestAllowed) {
+    const expiredFrame = side4RoomMemoryFrames.shift();
+    expiredFrame.time = 0;
+    side4RoomMemoryFramePool.push(expiredFrame);
+  }
+}
+
+function updateSide4RoomMemoryLayers(progress, now) {
+  const stage = getStage(progress);
+
+  for (let i = side4RoomMemoryLayers.length - 1; i >= 0; i -= 1) {
+    const layer = side4RoomMemoryLayers[i];
+    if (now - layer.createdAt > layer.duration || layer.minStage > stage) {
+      side4RoomMemoryLayers.splice(i, 1);
+    }
+  }
+
+  if (stage < 2) side4RoomLivingLayer = null;
+  if (stage < 3) side4RoomOldLayer = null;
+
+  updateSide4RoomSnapshots(stage, progress, now);
+
+  if (stage >= 2) {
+    if (!side4RoomLivingLayer) side4RoomLivingLayer = createSide4RoomLivingLayer(now, progress);
+  }
+
+  if (stage >= 3) {
+    if (!side4RoomOldLayer) side4RoomOldLayer = createSide4RoomUnstableLayer(now, progress, "old");
+    updateSide4RoomPlaybackLayer(side4RoomOldLayer, now, progress);
+  }
+
+  if (stage >= 4) {
+    updateSide4RoomNonlinearLayers(stage, progress, now);
+    updateSide4RoomMirroredLayers(stage, progress, now);
+    updateSide4RoomDeepLayers(stage, progress, now);
+  } else {
+    side4NextRoomMirrorAt = 0;
+    side4NextRoomDeepAt = 0;
+  }
+
+  if (stage >= 5) {
+    updateSide4RoomInvertedLayers(stage, progress, now);
+  } else {
+    side4NextRoomInvertedAt = 0;
+  }
+
+  side4RoomMemoryLayers.forEach((layer) => {
+    if (layer.kind !== "snapshot") updateSide4RoomPlaybackLayer(layer, now, progress);
+  });
+}
+
+function updateSide4RoomSnapshots(stage, progress, now) {
+  const maxSnapshots = stage <= 3 ? 1 : stage === 4 ? 2 : 3;
+  const activeSnapshots = side4RoomMemoryLayers.filter((layer) => layer.kind === "snapshot").length;
+
+  if (!side4NextRoomSnapshotAt) {
+    side4NextRoomSnapshotAt = now + randomSide4Range(
+      SIDE4_ROOM_SNAPSHOT_MIN_INTERVAL * (stage === 1 ? 0.55 : 0.82),
+      SIDE4_ROOM_SNAPSHOT_MAX_INTERVAL,
+      hash1(side4RoomMemorySerial, 1701)
+    );
+  }
+
+  if (activeSnapshots >= maxSnapshots || now < side4NextRoomSnapshotAt) return;
+
+  const layer = createSide4RoomSnapshotLayer(stage, progress, now);
+  if (layer) side4RoomMemoryLayers.push(layer);
+
+  side4NextRoomSnapshotAt = now + randomSide4Range(
+    SIDE4_ROOM_SNAPSHOT_MIN_INTERVAL,
+    SIDE4_ROOM_SNAPSHOT_MAX_INTERVAL * (stage >= 5 ? 0.72 : 1),
+    hash1(side4RoomMemorySerial, 1703)
+  );
+}
+
+function updateSide4RoomNonlinearLayers(stage, progress, now) {
+  const maxNonlinear = stage === 4 ? 2 : 5;
+  const activeNonlinear = side4RoomMemoryLayers.filter((layer) => layer.kind === "nonlinear").length;
+
+  if (!side4NextRoomNonlinearAt) {
+    side4NextRoomNonlinearAt = now + randomSide4Range(SIDE4_ROOM_NONLINEAR_MIN_INTERVAL, SIDE4_ROOM_NONLINEAR_MAX_INTERVAL, hash1(side4RoomMemorySerial, 1705));
+  }
+
+  if (activeNonlinear >= maxNonlinear || now < side4NextRoomNonlinearAt) return;
+
+  const layer = createSide4RoomNonlinearLayer(stage, progress, now);
+  if (layer) side4RoomMemoryLayers.push(layer);
+
+  side4NextRoomNonlinearAt = now + randomSide4Range(
+    SIDE4_ROOM_NONLINEAR_MIN_INTERVAL * (stage >= 5 ? 0.55 : 1),
+    SIDE4_ROOM_NONLINEAR_MAX_INTERVAL,
+    hash1(side4RoomMemorySerial, 1707)
+  );
+}
+
+function updateSide4RoomMirroredLayers(stage, progress, now) {
+  const activeMirrored = side4RoomMemoryLayers.filter((layer) => layer.kind === "mirrored").length;
+
+  if (!side4NextRoomMirrorAt) {
+    side4NextRoomMirrorAt = now + randomSide4Range(SIDE4_ROOM_MIRROR_MIN_INTERVAL, SIDE4_ROOM_MIRROR_MAX_INTERVAL, hash1(side4RoomMemorySerial, 1803));
+  }
+
+  if (activeMirrored >= 1 || now < side4NextRoomMirrorAt) return;
+
+  const layer = createSide4RoomMirroredLayer(stage, progress, now);
+  if (layer) side4RoomMemoryLayers.push(layer);
+
+  side4NextRoomMirrorAt = now + randomSide4Range(
+    SIDE4_ROOM_MIRROR_MIN_INTERVAL * (stage >= 5 ? 0.8 : 1),
+    SIDE4_ROOM_MIRROR_MAX_INTERVAL,
+    hash1(side4RoomMemorySerial, 1805)
+  );
+}
+
+function updateSide4RoomInvertedLayers(stage, progress, now) {
+  const activeInverted = side4RoomMemoryLayers.filter((layer) => layer.kind === "inverted").length;
+
+  if (!side4NextRoomInvertedAt) {
+    side4NextRoomInvertedAt = now + randomSide4Range(SIDE4_ROOM_INVERTED_MIN_INTERVAL, SIDE4_ROOM_INVERTED_MAX_INTERVAL, hash1(side4RoomMemorySerial, 1807));
+  }
+
+  if (activeInverted >= 1 || now < side4NextRoomInvertedAt) return;
+
+  const layer = createSide4RoomInvertedLayer(stage, progress, now);
+  if (layer) side4RoomMemoryLayers.push(layer);
+
+  side4NextRoomInvertedAt = now + randomSide4Range(
+    SIDE4_ROOM_INVERTED_MIN_INTERVAL,
+    SIDE4_ROOM_INVERTED_MAX_INTERVAL,
+    hash1(side4RoomMemorySerial, 1809)
+  );
+}
+
+function updateSide4RoomDeepLayers(stage, progress, now) {
+  const maxDeep = stage >= 5 ? 2 : 1;
+  const activeDeep = side4RoomMemoryLayers.filter((layer) => layer.kind === "deep").length;
+
+  if (!side4NextRoomDeepAt) {
+    side4NextRoomDeepAt = now + randomSide4Range(SIDE4_ROOM_DEEP_MIN_INTERVAL, SIDE4_ROOM_DEEP_MAX_INTERVAL, hash1(side4RoomMemorySerial, 1851));
+  }
+
+  if (activeDeep >= maxDeep || now < side4NextRoomDeepAt) return;
+
+  const layer = createSide4RoomDeepLayer(stage, progress, now);
+  if (layer) side4RoomMemoryLayers.push(layer);
+
+  side4NextRoomDeepAt = now + randomSide4Range(
+    SIDE4_ROOM_DEEP_MIN_INTERVAL * (stage >= 5 ? 0.72 : 1),
+    SIDE4_ROOM_DEEP_MAX_INTERVAL,
+    hash1(side4RoomMemorySerial, 1853)
+  );
+}
+
+function createSide4RoomSnapshotLayer(stage, progress, now) {
+  const serial = side4RoomMemorySerial;
+  const sampleTime = chooseSide4RoomMemoryTime(now, stage === 1 ? 1500 : 2600, stage >= 5 ? 24000 : 12000, hash1(serial, 1711));
+  if (!Number.isFinite(sampleTime)) return null;
+
+  side4RoomMemorySerial += 1;
+
+  return {
+    id: serial,
+    kind: "snapshot",
+    minStage: 1,
+    createdAt: now,
+    duration: randomSide4Range(SIDE4_ROOM_SNAPSHOT_MIN_DURATION, SIDE4_ROOM_SNAPSHOT_MAX_DURATION, hash1(serial, 1713)),
+    fadeIn: randomSide4Range(1600, 3200, hash1(serial, 1715)),
+    fadeOut: randomSide4Range(2200, 4200, hash1(serial, 1717)),
+    sampleTime,
+    alpha: randomSide4Range(0.025, stage >= 5 ? 0.27 : 0.2, hash1(serial, 1719)) * lerp(0.72, 1.08, smoothstep(0, 1, progress)),
+    phase: hash1(serial, 1721) * Math.PI * 2,
+    filter: "saturate(0.9) contrast(0.96)"
+  };
+}
+
+function createSide4RoomLivingLayer(now, progress) {
+  const serial = side4RoomMemorySerial;
+  side4RoomMemorySerial += 1;
+
+  return {
+    id: serial,
+    kind: "living",
+    createdAt: now,
+    age: randomSide4Range(8000, 12000, hash1(serial, 1727)),
+    alpha: randomSide4Range(0.035, 0.24, hash1(serial, 1733)) * lerp(0.72, 1.12, smoothstep(0.2, 1, progress)),
+    phase: hash1(serial, 1729) * Math.PI * 2,
+    breathRate: randomSide4Range(0.00018, 0.00042, hash1(serial, 1731)),
+    filter: "saturate(0.92) contrast(0.98)"
+  };
+}
+
+function createSide4RoomUnstableLayer(now, progress, kind) {
+  const serial = side4RoomMemorySerial;
+  const sourceStart = chooseSide4RoomMemoryTime(now, 15000, 32000, hash1(serial, 1737));
+  if (!Number.isFinite(sourceStart)) return null;
+
+  side4RoomMemorySerial += 1;
+
+  return {
+    id: serial,
+    kind,
+    createdAt: now,
+    sourceStart,
+    sourceDuration: randomSide4Range(6500, 15000, hash1(serial, 1739)),
+    playbackClock: randomSide4Range(0, 1800, hash1(serial, 1741)),
+    playbackRate: randomSide4Range(0.18, 0.72, hash1(serial, 1743)),
+    lastUpdateAt: now,
+    nextFreezeAt: now + randomSide4Range(1800, 5200, hash1(serial, 1745)),
+    freezeUntil: 0,
+    nextSkipAt: now + randomSide4Range(2600, 7000, hash1(serial, 1747)),
+    alpha: randomSide4Range(0.025, 0.26, hash1(serial, 1753)) * lerp(0.72, 1.1, smoothstep(0.4, 1, progress)),
+    phase: hash1(serial, 1749) * Math.PI * 2,
+    breathRate: randomSide4Range(0.00008, 0.00022, hash1(serial, 1751)),
+    filter: "saturate(0.82) contrast(0.92) blur(0.35px)"
+  };
+}
+
+function createSide4RoomNonlinearLayer(stage, progress, now) {
+  const serial = side4RoomMemorySerial;
+  const ageMin = stage >= 5 ? 3200 : 5200;
+  const ageMax = stage >= 5 ? 36000 : 28000;
+  const sourceStart = chooseSide4RoomMemoryTime(now, ageMin, ageMax, hash1(serial, 1757));
+  if (!Number.isFinite(sourceStart)) return null;
+
+  const speedSeed = hash1(serial, 1759);
+  const playbackRate = speedSeed < 0.28
+    ? randomSide4Range(0.06, 0.28, hash1(serial, 1761))
+    : speedSeed < 0.62
+      ? randomSide4Range(0.42, 0.92, hash1(serial, 1763))
+      : randomSide4Range(1.25, 2.35, hash1(serial, 1765));
+
+  side4RoomMemorySerial += 1;
+
+  return {
+    id: serial,
+    kind: "nonlinear",
+    minStage: 4,
+    createdAt: now,
+    duration: randomSide4Range(stage >= 5 ? 7200 : 3600, stage >= 5 ? 16800 : 9400, hash1(serial, 1767)),
+    fadeIn: randomSide4Range(1200, 3600, hash1(serial, 1769)),
+    fadeOut: randomSide4Range(1500, 4800, hash1(serial, 1771)),
+    sourceStart,
+    sourceDuration: randomSide4Range(2800, 9800, hash1(serial, 1773)),
+    playbackClock: randomSide4Range(0, 2400, hash1(serial, 1775)),
+    playbackRate,
+    lastUpdateAt: now,
+    nextFreezeAt: now + randomSide4Range(1200, 6200, hash1(serial, 1777)),
+    freezeUntil: 0,
+    nextSkipAt: now + randomSide4Range(1800, 7200, hash1(serial, 1779)),
+    alpha: randomSide4Range(stage >= 5 ? 0.025 : 0.018, stage >= 5 ? 0.27 : 0.2, hash1(serial, 1781)),
+    phase: hash1(serial, 1783) * Math.PI * 2,
+    breathRate: randomSide4Range(0.0001, 0.00036, hash1(serial, 1785)),
+    filter: speedSeed < 0.28 ? "saturate(0.78) contrast(0.9) blur(0.5px)" : "saturate(0.9) contrast(0.96)"
+  };
+}
+
+function createSide4RoomMirroredLayer(stage, progress, now) {
+  const serial = side4RoomMemorySerial;
+  const sourceStart = chooseSide4RoomMemoryTime(now, 5200, stage >= 5 ? 24000 : 16000, hash1(serial, 1811));
+  if (!Number.isFinite(sourceStart)) return null;
+
+  side4RoomMemorySerial += 1;
+
+  return {
+    id: serial,
+    kind: "mirrored",
+    minStage: 4,
+    createdAt: now,
+    duration: randomSide4Range(SIDE4_ROOM_MIRROR_MIN_DURATION, SIDE4_ROOM_MIRROR_MAX_DURATION, hash1(serial, 1813)),
+    fadeIn: randomSide4Range(900, 1500, hash1(serial, 1815)),
+    fadeOut: randomSide4Range(1200, 1900, hash1(serial, 1817)),
+    sourceStart,
+    sourceDuration: randomSide4Range(3600, 5400, hash1(serial, 1819)),
+    playbackClock: randomSide4Range(0, 900, hash1(serial, 1821)),
+    playbackRate: randomSide4Range(0.48, 0.88, hash1(serial, 1823)),
+    lastUpdateAt: now,
+    nextFreezeAt: Number.POSITIVE_INFINITY,
+    freezeUntil: 0,
+    nextSkipAt: Number.POSITIVE_INFINITY,
+    alpha: randomSide4Range(0.018, stage >= 5 ? 0.16 : 0.13, hash1(serial, 1825)),
+    phase: hash1(serial, 1827) * Math.PI * 2,
+    breathRate: randomSide4Range(0.0001, 0.00024, hash1(serial, 1829)),
+    filter: "saturate(0.78) contrast(0.9) blur(0.55px)",
+    transform: "mirror-x"
+  };
+}
+
+function createSide4RoomInvertedLayer(stage, progress, now) {
+  const serial = side4RoomMemorySerial;
+  const sourceStart = chooseSide4RoomMemoryTimeNearAge(now, 8800, 12400, hash1(serial, 1831));
+  if (!Number.isFinite(sourceStart)) return null;
+
+  side4RoomMemorySerial += 1;
+
+  return {
+    id: serial,
+    kind: "inverted",
+    minStage: 5,
+    createdAt: now,
+    duration: randomSide4Range(SIDE4_ROOM_INVERTED_MIN_DURATION, SIDE4_ROOM_INVERTED_MAX_DURATION, hash1(serial, 1833)),
+    fadeIn: randomSide4Range(1300, 2200, hash1(serial, 1835)),
+    fadeOut: randomSide4Range(1600, 2600, hash1(serial, 1837)),
+    sourceStart,
+    sourceDuration: randomSide4Range(2400, 3400, hash1(serial, 1839)),
+    playbackClock: randomSide4Range(0, 520, hash1(serial, 1841)),
+    playbackRate: randomSide4Range(0.42, 0.58, hash1(serial, 1843)),
+    lastUpdateAt: now,
+    nextFreezeAt: Number.POSITIVE_INFINITY,
+    freezeUntil: 0,
+    nextSkipAt: Number.POSITIVE_INFINITY,
+    alpha: randomSide4Range(0.02, 0.18, hash1(serial, 1845)),
+    phase: hash1(serial, 1847) * Math.PI * 2,
+    breathRate: randomSide4Range(0.00006, 0.00016, hash1(serial, 1849)),
+    filter: "saturate(0.7) contrast(0.86) blur(0.75px)",
+    transform: "rotate-180"
+  };
+}
+
+function createSide4RoomDeepLayer(stage, progress, now) {
+  const serial = side4RoomMemorySerial;
+  const sourceStart = chooseSide4RoomMemoryTimeNearAge(now, 20000, 30000, hash1(serial, 1855));
+  if (!Number.isFinite(sourceStart)) return null;
+
+  side4RoomMemorySerial += 1;
+
+  return {
+    id: serial,
+    kind: "deep",
+    minStage: 4,
+    createdAt: now,
+    duration: randomSide4Range(SIDE4_ROOM_DEEP_MIN_DURATION, SIDE4_ROOM_DEEP_MAX_DURATION, hash1(serial, 1857)),
+    fadeIn: randomSide4Range(2200, 5200, hash1(serial, 1859)),
+    fadeOut: randomSide4Range(2800, 6400, hash1(serial, 1861)),
+    sourceStart,
+    sourceDuration: randomSide4Range(7000, 15000, hash1(serial, 1863)),
+    playbackClock: randomSide4Range(0, 1600, hash1(serial, 1865)),
+    playbackRate: randomSide4Range(0.16, 0.52, hash1(serial, 1867)),
+    lastUpdateAt: now,
+    nextFreezeAt: now + randomSide4Range(4200, 9200, hash1(serial, 1869)),
+    freezeUntil: 0,
+    nextSkipAt: now + randomSide4Range(6200, 12800, hash1(serial, 1871)),
+    alpha: randomSide4Range(0.018, stage >= 5 ? 0.22 : 0.16, hash1(serial, 1873)),
+    phase: hash1(serial, 1875) * Math.PI * 2,
+    breathRate: randomSide4Range(0.00004, 0.00014, hash1(serial, 1877)),
+    filter: "saturate(0.66) contrast(0.82) blur(0.95px)"
+  };
+}
+
+function updateSide4RoomPlaybackLayer(layer, now, progress) {
+  if (!layer || !Number.isFinite(layer.playbackClock)) return;
+
+  const dt = clamp(now - (layer.lastUpdateAt || now), 0, 120);
+  layer.lastUpdateAt = now;
+
+  if (now < layer.freezeUntil) return;
+
+  if (now >= layer.nextFreezeAt) {
+    const freezeStrength = layer.kind === "old" ? smoothstep(0.4, 1, progress) : smoothstep(0.6, 1, progress);
+    if (hash2(layer.id, Math.floor(now / 1000), 1791) < lerp(0.28, 0.58, freezeStrength)) {
+      layer.freezeUntil = now + randomSide4Range(260, layer.kind === "old" ? 1150 : 760, hash1(layer.id, Math.floor(now / 700) + 1793));
+    }
+    layer.nextFreezeAt = now + randomSide4Range(1800, layer.kind === "old" ? 6200 : 4800, hash1(layer.id, Math.floor(now / 900) + 1795));
+  }
+
+  if (now >= layer.nextSkipAt) {
+    const skip = randomSide4Range(180, layer.kind === "old" ? 980 : 720, hash1(layer.id, Math.floor(now / 800) + 1797));
+    layer.playbackClock += skip;
+    layer.nextSkipAt = now + randomSide4Range(2600, 8600, hash1(layer.id, Math.floor(now / 1100) + 1799));
+  }
+
+  const wobble = 1 + Math.sin(now * (layer.breathRate || 0.00018) * 1.7 + layer.phase) * 0.18;
+  layer.playbackClock += dt * layer.playbackRate * wobble;
+
+  if (layer.playbackClock > layer.sourceDuration) {
+    layer.playbackClock = layer.kind === "old" ? randomSide4Range(0, 1400, hash1(layer.id, Math.floor(now / 1000) + 1801)) : 0;
+  }
+}
+
+function drawSide4RoomMemoryLayers(targetCtx, progress, now) {
+  side4RoomMemoryLayers.forEach((layer) => drawSide4RoomMemoryLayer(targetCtx, layer, progress, now));
+
+  if (side4RoomLivingLayer && getStage(progress) >= 2) {
+    const breath = 0.64 + Math.sin(now * side4RoomLivingLayer.breathRate + side4RoomLivingLayer.phase) * 0.36;
+    const targetTime = now - side4RoomLivingLayer.age + Math.sin(now * 0.00007 + side4RoomLivingLayer.phase) * 850;
+    drawSide4RoomFrameAt(targetCtx, targetTime, side4RoomLivingLayer.alpha * lerp(0.42, 1, breath), side4RoomLivingLayer.filter);
+  }
+
+  if (side4RoomOldLayer && getStage(progress) >= 3) {
+    const breath = 0.7 + Math.sin(now * side4RoomOldLayer.breathRate + side4RoomOldLayer.phase) * 0.3;
+    drawSide4RoomFrameAt(
+      targetCtx,
+      side4RoomOldLayer.sourceStart + side4RoomOldLayer.playbackClock,
+      side4RoomOldLayer.alpha * breath,
+      side4RoomOldLayer.filter
+    );
+  }
+}
+
+function drawSide4RoomMemoryLayer(targetCtx, layer, progress, now) {
+  const age = now - layer.createdAt;
+  const envelope = smoothstep(0, layer.fadeIn || 1800, age)
+    * (1 - smoothstep(layer.duration - (layer.fadeOut || 2400), layer.duration, age));
+  if (envelope <= 0.001) return;
+
+  const breath = 0.82 + Math.sin(now * (layer.breathRate || 0.0002) + layer.phase) * 0.18;
+  const targetTime = layer.kind === "snapshot"
+    ? layer.sampleTime
+    : layer.sourceStart + layer.playbackClock;
+
+  drawSide4RoomFrameAt(targetCtx, targetTime, layer.alpha * envelope * breath, layer.filter, layer.transform);
+}
+
+function drawSide4RoomFrameAt(targetCtx, targetTime, alpha, filter, transform) {
+  const frame = sampleSide4RoomMemoryFrame(targetTime);
+  if (!frame || alpha <= 0.001) return;
+
+  targetCtx.save();
+  targetCtx.globalAlpha = clamp(alpha, 0, 0.32);
+  targetCtx.filter = filter || "none";
+
+  if (transform === "mirror-x") {
+    targetCtx.translate(canvas.width, 0);
+    targetCtx.scale(-1, 1);
+  } else if (transform === "rotate-180") {
+    targetCtx.translate(canvas.width, canvas.height);
+    targetCtx.rotate(Math.PI);
+  }
+
+  targetCtx.drawImage(frame.canvas, 0, 0, canvas.width, canvas.height);
+  targetCtx.restore();
+}
+
+function chooseSide4RoomMemoryTime(now, minAge, maxAge, seed) {
+  if (!side4RoomMemoryFrames.length) return NaN;
+
+  const oldest = side4RoomMemoryFrames[0].time;
+  const newest = side4RoomMemoryFrames[side4RoomMemoryFrames.length - 1].time;
+  const availableAge = Math.max(0, newest - oldest);
+  const safeMaxAge = Math.min(maxAge, availableAge);
+  const safeMinAge = Math.min(minAge, safeMaxAge);
+
+  if (safeMaxAge <= 0) return newest;
+
+  return now - randomSide4Range(safeMinAge, safeMaxAge, seed);
+}
+
+function chooseSide4RoomMemoryTimeNearAge(now, minAge, maxAge, seed) {
+  if (!side4RoomMemoryFrames.length) return NaN;
+
+  const oldest = side4RoomMemoryFrames[0].time;
+  const newest = side4RoomMemoryFrames[side4RoomMemoryFrames.length - 1].time;
+  const availableAge = Math.max(0, newest - oldest);
+  if (availableAge < minAge * 0.82) return NaN;
+
+  const safeMaxAge = Math.min(maxAge, availableAge);
+  const safeMinAge = Math.min(minAge, safeMaxAge);
+  if (safeMaxAge <= 0) return NaN;
+
+  return now - randomSide4Range(safeMinAge, safeMaxAge, seed);
+}
+
+function sampleSide4RoomMemoryFrame(targetTime) {
+  if (!side4RoomMemoryFrames.length) return null;
+
+  let best = side4RoomMemoryFrames[0];
+
+  for (let i = side4RoomMemoryFrames.length - 1; i >= 0; i -= 1) {
+    const frame = side4RoomMemoryFrames[i];
+    if (frame.time <= targetTime) return frame;
+    best = frame;
+  }
+
+  return best;
+}
+
+function recordSide4PoseMemory(now) {
+  if (!hasReliablePose(now) || !latestPoseScreenLandmarks || !latestPoseBounds) return;
+  if (now - side4LastPoseMemoryRecordAt < SIDE4_POSE_MEMORY_RECORD_INTERVAL) return;
+
+  side4PoseMemory.push({
+    time: now,
+    bounds: { ...latestPoseBounds },
+    landmarks: latestPoseScreenLandmarks.map((point) => ({
+      x: point.x,
+      y: point.y,
+      z: point.z,
+      visibility: point.visibility,
+      index: point.index
+    }))
+  });
+
+  side4LastPoseMemoryRecordAt = now;
+
+  const oldestAllowed = now - SIDE4_POSE_MEMORY_DURATION;
+  while (
+    side4PoseMemory.length > SIDE4_POSE_MEMORY_MAX_FRAMES
+      || (side4PoseMemory.length && side4PoseMemory[0].time < oldestAllowed)
+  ) {
+    side4PoseMemory.shift();
+  }
+}
+
+function updateSide4MemoryFragments(progress, now) {
+  const stage = getStage(progress);
+  const settings = SIDE4_MEMORY_STAGE_SETTINGS[stage];
+
+  for (let i = side4MemoryFragments.length - 1; i >= 0; i -= 1) {
+    const fragment = side4MemoryFragments[i];
+    if (now - fragment.createdAt > fragment.duration) {
+      side4MemoryFragments.splice(i, 1);
+    }
+  }
+
+  if (!settings || settings.maxFragments <= 0 || side4PoseMemory.length < 8) return;
+
+  if (stage !== side4LastMemoryStage) {
+    side4LastMemoryStage = stage;
+    side4NextMemoryFragmentAt = stage >= 3
+      ? Math.min(side4NextMemoryFragmentAt || now, now + settings.minInterval * 0.35)
+      : side4NextMemoryFragmentAt;
+  }
+
+  if (!side4NextMemoryFragmentAt) {
+    side4NextMemoryFragmentAt = now + randomSide4Range(settings.minInterval, settings.maxInterval, 0.37);
+    return;
+  }
+
+  if (now < side4NextMemoryFragmentAt || side4MemoryFragments.length >= settings.maxFragments) return;
+
+  spawnSide4MemoryFragment(stage, settings, now);
+  const pressure = side4MemoryFragments.length / Math.max(1, settings.maxFragments);
+  side4NextMemoryFragmentAt = now + randomSide4Range(
+    settings.minInterval,
+    settings.maxInterval,
+    hash2(side4MemoryFragmentSerial, stage, 441)
+  ) * lerp(0.72, 1.25, pressure);
+}
+
+function spawnSide4MemoryFragment(stage, settings, now) {
+  const serial = side4MemoryFragmentSerial;
+  const replayDuration = randomSide4Range(SIDE4_MEMORY_REPLAY_MIN_MS, SIDE4_MEMORY_REPLAY_MAX_MS, hash1(serial, 613));
+  const replayStartOffset = hash1(serial, 616) < lerp(0.08, 0.32, clamp((stage - 1) / 4, 0, 1))
+    ? replayDuration * lerp(0.18, 0.52, hash1(serial, 617))
+    : 0;
+  const sourceClipDuration = Math.max(620, replayDuration - replayStartOffset);
+  const speedSeed = hash1(serial, 74);
+  const playbackRate = speedSeed < 0.24
+    ? lerp(0.34, 0.66, hash1(serial, 75))
+    : speedSeed < 0.72
+      ? lerp(0.78, 1.12, hash1(serial, 76))
+      : lerp(1.16, 1.54, hash1(serial, 77));
+  const replayVisibleDuration = sourceClipDuration / Math.max(0.18, playbackRate);
+  const dissolveDuration = randomSide4Range(SIDE4_MEMORY_DISSOLVE_MIN_MS, SIDE4_MEMORY_DISSOLVE_MAX_MS, hash1(serial, 618));
+  const fadesEarly = hash1(serial, 619) < lerp(0.08, 0.28, clamp((stage - 1) / 4, 0, 1));
+  const duration = Math.max(
+    1400,
+    fadesEarly
+      ? replayVisibleDuration * lerp(0.48, 0.84, hash1(serial, 620)) + dissolveDuration * 0.72
+      : replayVisibleDuration + dissolveDuration
+  );
+  const memoryAge = chooseSide4MemoryAge(stage, now, replayDuration, serial);
+
+  if (!memoryAge) return;
+
+  const memoryStart = now - memoryAge;
+  const memoryPose = sampleSide4PoseMemory(memoryStart);
+  const memoryAnchor = getSide4PoseCenter(memoryPose ? memoryPose.landmarks : null);
+  const currentAnchor = getSide4PoseCenter(latestPoseScreenLandmarks);
+  if (!memoryPose || !memoryAnchor) return;
+
+  const alignSeed = hash1(serial, 902);
+  const depthSeed = hash1(serial, 333);
+  const bodyScale = getSide4PoseScale(memoryPose.landmarks);
+  const stagePresence = clamp((stage - 1) / 4, 0, 1);
+  const offsetAngle = hash1(serial, 228) * Math.PI * 2;
+  const attachMode = alignSeed < 0.12
+    ? "attached"
+    : alignSeed < 0.62
+      ? "near"
+      : "timeline";
+  const offsetRadius = bodyScale * (
+    attachMode === "attached"
+      ? lerp(0.015, 0.085, hash1(serial, 117))
+      : attachMode === "near"
+        ? lerp(0.14, lerp(0.34, 0.48, stagePresence), hash1(serial, 117))
+        : lerp(0.24, lerp(0.52, 0.76, stagePresence), hash1(serial, 117))
+  );
+  let offsetX = Math.cos(offsetAngle) * offsetRadius;
+  let offsetY = Math.sin(offsetAngle) * offsetRadius * lerp(0.45, 0.9, hash1(serial, 229));
+
+  if ((attachMode === "attached" || attachMode === "near") && currentAnchor) {
+    offsetX += currentAnchor.x - memoryAnchor.x;
+    offsetY += currentAnchor.y - memoryAnchor.y;
+  }
+
+  side4MemoryFragments.push({
+    id: serial,
+    createdAt: now,
+    duration,
+    memoryStart,
+    replayDuration,
+    replayStartOffset,
+    sourceClipDuration,
+    playbackRate,
+    replayVisibleDuration,
+    fadesEarly,
+    fadeStart: fadesEarly ? lerp(0.48, 0.72, hash1(serial, 621)) : lerp(0.66, 0.86, hash1(serial, 622)),
+    skipCount: stage >= 3 && hash1(serial, 623) < lerp(0.18, 0.46, stagePresence) ? 1 + Math.floor(hash1(serial, 624) * 2) : 0,
+    skipAtA: lerp(0.22, 0.68, hash1(serial, 625)),
+    skipAtB: lerp(0.48, 0.86, hash1(serial, 626)),
+    skipAmountA: replayDuration * lerp(0.035, 0.14, hash1(serial, 627)),
+    skipAmountB: replayDuration * lerp(0.025, 0.1, hash1(serial, 628)),
+    freezeAt: lerp(0.18, 0.72, hash1(serial, 629)),
+    freezeDuration: stage >= 3 && hash1(serial, 630) < lerp(0.16, 0.38, stagePresence)
+      ? lerp(90, 420, hash1(serial, 631))
+      : 0,
+    stutterAt: lerp(0.28, 0.76, hash1(serial, 632)),
+    stutterDuration: stage >= 3 && hash1(serial, 633) < lerp(0.12, 0.32, stagePresence)
+      ? lerp(160, 520, hash1(serial, 634))
+      : 0,
+    stutterStep: lerp(80, 190, hash1(serial, 635)),
+    alpha: randomSide4Range(settings.minAlpha, settings.maxAlpha, hash1(serial, 88)),
+    attachMode,
+    depth: depthSeed < 0.34 ? "behind" : depthSeed < 0.72 ? "middle" : "front",
+    offsetX,
+    offsetY,
+    driftX: Math.cos(offsetAngle + Math.PI * 0.5) * bodyScale * lerp(-0.035, 0.035, hash1(serial, 475)),
+    driftY: bodyScale * lerp(-0.018, 0.05, hash1(serial, 476)),
+    tone: chooseSide4MemoryTone(serial),
+    softness: lerp(0.72, 1.45, hash1(serial, 778)),
+    silhouetteScale: lerp(0.94, 1.08, hash1(serial, 779)),
+    density: lerp(0.78, 1.32, hash1(serial, 780)),
+    wispiness: lerp(0.55, 1.35, hash1(serial, 781))
+  });
+
+  side4MemoryFragmentSerial += 1;
+}
+
+function chooseSide4MemoryAge(stage, now, duration, serial) {
+  if (!side4PoseMemory.length) return 0;
+
+  const oldestFrame = side4PoseMemory[0];
+  const newestFrame = side4PoseMemory[side4PoseMemory.length - 1];
+  const available = Math.max(0, newestFrame.time - oldestFrame.time - duration);
+  const minAge = Math.max(duration + 900, stage <= 2 ? 2600 : stage <= 3 ? 4200 : 5200);
+  const maxAge = Math.min(SIDE4_POSE_MEMORY_DURATION - duration, available + 800);
+
+  if (maxAge <= minAge) return 0;
+
+  return randomSide4Range(minAge, maxAge, hash1(serial, 911));
+}
+
+function drawSide4MemoryFragments(targetCtx, progress, now, depth) {
+  if (!side4MemoryFragments.length) return;
+
+  side4MemoryFragments.forEach((fragment) => {
+    if (fragment.depth !== depth) return;
+    drawSide4MemoryFragment(targetCtx, fragment, progress, now);
+  });
+}
+
+function drawSide4MemoryFragment(targetCtx, fragment, progress, now) {
+  if (!latestPoseScreenLandmarks) return;
+
+  const age = now - fragment.createdAt;
+  const life = clamp(age / fragment.duration, 0, 1);
+  const envelope = smoothstep(0, 0.16, life) * (1 - smoothstep(fragment.fadeStart || 0.66, 1, life));
+  if (envelope <= 0.001) return;
+
+  const memoryPose = sampleSide4PoseMemory(getSide4MemoryFragmentPlaybackTime(fragment, age));
+  if (!memoryPose) return;
+
+  const offset = getSide4FragmentOffset(fragment, memoryPose.landmarks, age);
+  bodyCtx.clearRect(0, 0, bodyCanvas.width, bodyCanvas.height);
+  drawSide4MemorySilhouette(bodyCtx, memoryPose.landmarks, fragment, offset, now);
+
+  targetCtx.save();
+  targetCtx.globalAlpha = fragment.alpha * envelope;
+  targetCtx.drawImage(bodyCanvas, 0, 0);
+  targetCtx.restore();
+}
+
+function getSide4MemoryFragmentPlaybackTime(fragment, age) {
+  const replayVisibleDuration = Math.max(1, fragment.replayVisibleDuration || fragment.duration);
+  const replayAge = clamp(age, 0, replayVisibleDuration);
+  let sourceOffset = fragment.replayStartOffset || 0;
+  let adjustedAge = replayAge;
+
+  if (fragment.freezeDuration > 0) {
+    const freezeStart = replayVisibleDuration * (fragment.freezeAt || 0.4);
+    const freezeEnd = freezeStart + fragment.freezeDuration;
+
+    if (adjustedAge >= freezeStart && adjustedAge <= freezeEnd) {
+      adjustedAge = freezeStart;
+    } else if (adjustedAge > freezeEnd) {
+      adjustedAge -= fragment.freezeDuration;
+    }
+  }
+
+  if (fragment.stutterDuration > 0) {
+    const stutterStart = replayVisibleDuration * (fragment.stutterAt || 0.5);
+    const stutterEnd = stutterStart + fragment.stutterDuration;
+
+    if (adjustedAge >= stutterStart && adjustedAge <= stutterEnd) {
+      const local = adjustedAge - stutterStart;
+      const step = Math.max(50, fragment.stutterStep || 120);
+      adjustedAge = stutterStart + Math.floor(local / step) * step * 0.42;
+    }
+  }
+
+  sourceOffset += adjustedAge * (fragment.playbackRate || 1);
+
+  if (fragment.skipCount > 0 && replayAge / replayVisibleDuration > (fragment.skipAtA || 0.45)) {
+    sourceOffset += fragment.skipAmountA || 0;
+  }
+
+  if (fragment.skipCount > 1 && replayAge / replayVisibleDuration > (fragment.skipAtB || 0.7)) {
+    sourceOffset += fragment.skipAmountB || 0;
+  }
+
+  const maxOffset = (fragment.replayStartOffset || 0) + Math.max(1, fragment.sourceClipDuration || fragment.replayDuration || 1);
+  sourceOffset = clamp(sourceOffset, fragment.replayStartOffset || 0, maxOffset);
+
+  return fragment.memoryStart + sourceOffset;
+}
+
+function drawSide4CurrentBodyLayer(targetCtx) {
+  if (!maskCanvas.width || !maskCanvas.height) return;
+
+  bodyCtx.clearRect(0, 0, bodyCanvas.width, bodyCanvas.height);
+  drawSourceCover(bodyCtx, video);
+  bodyCtx.save();
+  bodyCtx.globalCompositeOperation = "destination-in";
+  bodyCtx.drawImage(maskCanvas, 0, 0);
+  bodyCtx.restore();
+
+  targetCtx.save();
+  targetCtx.globalAlpha = 0.98;
+  targetCtx.drawImage(bodyCanvas, 0, 0);
+  targetCtx.restore();
+}
+
+function sampleSide4PoseMemory(targetTime) {
+  if (!side4PoseMemory.length) return null;
+
+  let before = side4PoseMemory[0];
+  let after = side4PoseMemory[side4PoseMemory.length - 1];
+
+  if (targetTime <= before.time) return before;
+  if (targetTime >= after.time) return after;
+
+  for (let i = side4PoseMemory.length - 1; i >= 1; i -= 1) {
+    if (side4PoseMemory[i].time >= targetTime && side4PoseMemory[i - 1].time <= targetTime) {
+      before = side4PoseMemory[i - 1];
+      after = side4PoseMemory[i];
+      break;
+    }
+  }
+
+  const amount = clamp((targetTime - before.time) / Math.max(1, after.time - before.time), 0, 1);
+
+  return {
+    time: targetTime,
+    bounds: interpolateSide4Bounds(before.bounds, after.bounds, amount),
+    landmarks: before.landmarks.map((point, index) => interpolateSide4PosePoint(point, after.landmarks[index], amount))
+  };
+}
+
+function interpolateSide4PosePoint(start, end, amount) {
+  if (!start || !end) return start || end || null;
+
+  return {
+    x: lerp(start.x, end.x, amount),
+    y: lerp(start.y, end.y, amount),
+    z: lerp(start.z || 0, end.z || 0, amount),
+    visibility: lerp(start.visibility ?? 0, end.visibility ?? 0, amount),
+    index: start.index
+  };
+}
+
+function interpolateSide4Bounds(start, end, amount) {
+  if (!start || !end) return start || end || null;
+
+  return {
+    minX: lerp(start.minX, end.minX, amount),
+    minY: lerp(start.minY, end.minY, amount),
+    maxX: lerp(start.maxX, end.maxX, amount),
+    maxY: lerp(start.maxY, end.maxY, amount)
+  };
+}
+
+function getSide4FragmentOffset(fragment, memoryPoints, age) {
+  const driftAmount = smoothstep(0, fragment.duration, age);
+
+  return {
+    x: fragment.offsetX + fragment.driftX * driftAmount,
+    y: fragment.offsetY + fragment.driftY * driftAmount
+  };
+}
+
+function drawSide4MemorySilhouette(targetCtx, points, fragment, offset, now) {
+  const scale = getSide4PoseScale(points) * fragment.silhouetteScale;
+  const baseTone = fragment.tone;
+  const pulse = 0.92 + Math.sin(now * 0.00034 + fragment.id * 1.73) * 0.08;
+  const softness = fragment.softness;
+  const breath = 1 + Math.sin(now * 0.00024 + fragment.id * 2.31) * 0.025;
+
+  targetCtx.save();
+  targetCtx.lineCap = "round";
+  targetCtx.lineJoin = "round";
+  targetCtx.globalCompositeOperation = "source-over";
+
+  targetCtx.filter = `blur(${clamp(scale * 0.03 * softness, 8, 26)}px)`;
+  drawSide4UnifiedMemoryForm(targetCtx, points, fragment, offset, scale, baseTone, 0.38 * pulse, 1.22 * breath, now);
+
+  targetCtx.filter = `blur(${clamp(scale * 0.012 * softness, 3, 10)}px)`;
+  drawSide4UnifiedMemoryForm(targetCtx, points, fragment, offset, scale, baseTone, 0.58 * pulse, 1.03 * breath, now);
+
+  targetCtx.filter = `blur(${clamp(scale * 0.004 * softness, 0.8, 3.5)}px)`;
+  drawSide4UnifiedMemoryForm(targetCtx, points, fragment, offset, scale, baseTone, 0.22 * pulse, 0.94 * breath, now);
+
+  targetCtx.globalCompositeOperation = "source-atop";
+  targetCtx.filter = `blur(${clamp(scale * 0.018 * softness, 4, 15)}px)`;
+  drawSide4MemoryInteriorFlow(targetCtx, points, fragment, offset, scale, baseTone, 0.18 * pulse, now);
+
+  targetCtx.restore();
+}
+
+function drawSide4UnifiedMemoryForm(targetCtx, points, fragment, offset, scale, tone, alpha, widthMultiplier, now) {
+  const center = getSide4PoseCenter(points);
+  if (!center) return;
+
+  const gradient = createSide4MemoryVolumeGradient(targetCtx, center.x + offset.x, center.y + offset.y, scale, tone, alpha, fragment);
+  targetCtx.fillStyle = gradient;
+  targetCtx.strokeStyle = gradient;
+  targetCtx.lineCap = "round";
+  targetCtx.lineJoin = "round";
+
+  drawSide4UnifiedLimb(targetCtx, points, [POSE_LANDMARKS.leftHip, POSE_LANDMARKS.leftKnee, POSE_LANDMARKS.leftAnkle], offset, scale, widthMultiplier, 0.108);
+  drawSide4UnifiedLimb(targetCtx, points, [POSE_LANDMARKS.rightHip, POSE_LANDMARKS.rightKnee, POSE_LANDMARKS.rightAnkle], offset, scale, widthMultiplier, 0.108);
+  drawSide4UnifiedLimb(targetCtx, points, [POSE_LANDMARKS.leftShoulder, POSE_LANDMARKS.leftElbow, POSE_LANDMARKS.leftWrist], offset, scale, widthMultiplier, 0.086);
+  drawSide4UnifiedLimb(targetCtx, points, [POSE_LANDMARKS.rightShoulder, POSE_LANDMARKS.rightElbow, POSE_LANDMARKS.rightWrist], offset, scale, widthMultiplier, 0.086);
+  drawSide4UnifiedTorso(targetCtx, points, offset, scale, widthMultiplier, now, fragment);
+  drawSide4UnifiedHeadAndNeck(targetCtx, points, offset, scale, widthMultiplier);
+}
+
+function createSide4MemoryVolumeGradient(targetCtx, x, y, scale, tone, alpha, fragment) {
+  const radius = scale * lerp(0.28, 0.44, fragment.density);
+  const gradient = targetCtx.createRadialGradient(x, y - scale * 0.08, radius * 0.05, x, y, radius);
+
+  gradient.addColorStop(0, grey(tone, alpha));
+  gradient.addColorStop(0.36, grey(tone, alpha * 0.78));
+  gradient.addColorStop(0.72, grey(tone, alpha * 0.28));
+  gradient.addColorStop(1, grey(tone, 0));
+
+  return gradient;
+}
+
+function drawSide4UnifiedTorso(targetCtx, points, offset, scale, widthMultiplier, now, fragment) {
+  const leftShoulder = getSide4Point(points, POSE_LANDMARKS.leftShoulder);
+  const rightShoulder = getSide4Point(points, POSE_LANDMARKS.rightShoulder);
+  const leftHip = getSide4Point(points, POSE_LANDMARKS.leftHip);
+  const rightHip = getSide4Point(points, POSE_LANDMARKS.rightHip);
+  if (!leftShoulder || !rightShoulder || !leftHip || !rightHip) return;
+
+  const shoulderCenter = midpointSide4(leftShoulder, rightShoulder);
+  const hipCenter = midpointSide4(leftHip, rightHip);
+  const center = midpointSide4(shoulderCenter, hipCenter);
+  const shoulderWidth = distanceBetweenPoints(leftShoulder, rightShoulder);
+  const torsoHeight = distanceBetweenPoints(shoulderCenter, hipCenter);
+  const angle = Math.atan2(rightShoulder.y - leftShoulder.y, rightShoulder.x - leftShoulder.x);
+  const flow = Math.sin(now * 0.00021 + fragment.id * 0.91) * scale * 0.012 * fragment.wispiness;
+
+  targetCtx.save();
+  targetCtx.translate(center.x + offset.x + flow, center.y + offset.y);
+  targetCtx.rotate(angle);
+  targetCtx.beginPath();
+  targetCtx.ellipse(
+    0,
+    0,
+    clamp(shoulderWidth * 0.68 * widthMultiplier, scale * 0.1, scale * 0.28),
+    clamp(torsoHeight * 0.68 * widthMultiplier, scale * 0.14, scale * 0.36),
+    0,
+    0,
+    Math.PI * 2
+  );
+  targetCtx.fill();
+  targetCtx.restore();
+}
+
+function drawSide4UnifiedHeadAndNeck(targetCtx, points, offset, scale, widthMultiplier) {
+  const head = averageSide4PosePoints(points, [
+    POSE_LANDMARKS.nose,
+    POSE_LANDMARKS.leftEye,
+    POSE_LANDMARKS.rightEye,
+    POSE_LANDMARKS.leftEar,
+    POSE_LANDMARKS.rightEar,
+    POSE_LANDMARKS.mouthLeft,
+    POSE_LANDMARKS.mouthRight
+  ]);
+  const leftEar = getSide4Point(points, POSE_LANDMARKS.leftEar);
+  const rightEar = getSide4Point(points, POSE_LANDMARKS.rightEar);
+  const shoulderCenter = averageSide4PosePoints(points, [POSE_LANDMARKS.leftShoulder, POSE_LANDMARKS.rightShoulder]);
+  if (!head) return;
+
+  const earDistance = leftEar && rightEar ? distanceBetweenPoints(leftEar, rightEar) : scale * 0.24;
+  const headWidth = clamp(earDistance * 0.9 * widthMultiplier, scale * 0.11, scale * 0.25);
+  const headHeight = headWidth * 1.24;
+
+  if (shoulderCenter) {
+    drawSide4UnifiedCapsule(
+      targetCtx,
+      { x: head.x, y: head.y + headHeight * 0.46 },
+      shoulderCenter,
+      offset,
+      clamp(scale * 0.095 * widthMultiplier, 18, 58)
+    );
+  }
+
+  targetCtx.beginPath();
+  targetCtx.ellipse(head.x + offset.x, head.y + offset.y, headWidth, headHeight, 0, 0, Math.PI * 2);
+  targetCtx.fill();
+}
+
+function drawSide4UnifiedLimb(targetCtx, points, indices, offset, scale, widthMultiplier, widthScale) {
+  const visible = indices.map((index) => getSide4Point(points, index)).filter(Boolean);
+  if (visible.length < 2) return;
+
+  const width = clamp(scale * widthScale * widthMultiplier, 18, 78);
+
+  for (let i = 0; i < visible.length - 1; i += 1) {
+    drawSide4UnifiedCapsule(targetCtx, visible[i], visible[i + 1], offset, width);
+  }
+
+  visible.forEach((point, index) => {
+    const radius = width * (index === visible.length - 1 ? 0.58 : 0.42);
+    targetCtx.beginPath();
+    targetCtx.ellipse(point.x + offset.x, point.y + offset.y, radius, radius * 0.92, 0, 0, Math.PI * 2);
+    targetCtx.fill();
+  });
+}
+
+function drawSide4UnifiedCapsule(targetCtx, start, end, offset, width) {
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  const length = Math.max(1, Math.hypot(dx, dy));
+  const angle = Math.atan2(dy, dx);
+
+  targetCtx.save();
+  targetCtx.translate((start.x + end.x) * 0.5 + offset.x, (start.y + end.y) * 0.5 + offset.y);
+  targetCtx.rotate(angle);
+  targetCtx.beginPath();
+  targetCtx.ellipse(0, 0, length * 0.56, width * 0.52, 0, 0, Math.PI * 2);
+  targetCtx.fill();
+  targetCtx.restore();
+}
+
+function drawSide4MemoryInteriorFlow(targetCtx, points, fragment, offset, scale, tone, alpha, now) {
+  const center = getSide4PoseCenter(points);
+  const head = averageSide4PosePoints(points, [
+    POSE_LANDMARKS.nose,
+    POSE_LANDMARKS.leftEye,
+    POSE_LANDMARKS.rightEye,
+    POSE_LANDMARKS.leftEar,
+    POSE_LANDMARKS.rightEar
+  ]);
+  if (!center) return;
+
+  const flowA = now * 0.00018 + fragment.id * 1.7;
+  const flowB = now * 0.00013 + fragment.id * 2.4;
+  drawSide4FlowGradient(targetCtx, center.x + offset.x + Math.cos(flowA) * scale * 0.035, center.y + offset.y + Math.sin(flowA) * scale * 0.03, scale * 0.34, tone, alpha * 0.9);
+
+  if (head) {
+    drawSide4FlowGradient(targetCtx, head.x + offset.x + Math.sin(flowB) * scale * 0.02, head.y + offset.y + Math.cos(flowB) * scale * 0.02, scale * 0.18, tone, alpha * 0.72);
+  }
+}
+
+function drawSide4FlowGradient(targetCtx, x, y, radius, tone, alpha) {
+  const gradient = targetCtx.createRadialGradient(x, y, radius * 0.05, x, y, radius);
+  const brightTone = clamp(tone + 36, 0, 255);
+  const darkTone = clamp(tone - 24, 0, 255);
+
+  gradient.addColorStop(0, grey(brightTone, alpha));
+  gradient.addColorStop(0.45, grey(tone, alpha * 0.36));
+  gradient.addColorStop(1, grey(darkTone, 0));
+
+  targetCtx.fillStyle = gradient;
+  targetCtx.beginPath();
+  targetCtx.arc(x, y, radius, 0, Math.PI * 2);
+  targetCtx.fill();
+}
+
+function midpointSide4(a, b) {
+  return {
+    x: (a.x + b.x) * 0.5,
+    y: (a.y + b.y) * 0.5
+  };
+}
+
+function interpolateSide4Point(start, end, amount) {
+  return {
+    x: lerp(start.x, end.x, amount),
+    y: lerp(start.y, end.y, amount)
+  };
+}
+
+function drawSide4EyeVoid(targetCtx, progress, now) {
+  const amount = lerp(0.18, 1, smoothstep(SIDE4_EYE_VOID_START_PROGRESS, 1, progress));
+  if (amount <= 0.001 || !hasReliablePose(now)) return;
+
+  const leftEye = getPosePoint(POSE_LANDMARKS.leftEye) || getPosePoint(POSE_LANDMARKS.leftEyeInner);
+  const rightEye = getPosePoint(POSE_LANDMARKS.rightEye) || getPosePoint(POSE_LANDMARKS.rightEyeInner);
+  const nose = getPosePoint(POSE_LANDMARKS.nose);
+  if (!leftEye || !rightEye) return;
+
+  const centerX = (leftEye.x + rightEye.x) * 0.5;
+  const centerY = (leftEye.y + rightEye.y) * 0.5 + (nose ? (nose.y - (leftEye.y + rightEye.y) * 0.5) * 0.12 : 0);
+  const eyeDistance = distanceBetweenPoints(leftEye, rightEye);
+  const scale = getSide4PoseScale(latestPoseScreenLandmarks);
+  const width = clamp(Math.max(eyeDistance * 3.2, scale * 0.18) * lerp(0.72, 1.18, amount), 48, scale * 0.52);
+  const height = clamp(width * lerp(0.2, 0.32, amount), 16, scale * 0.16);
+  const angle = Math.atan2(rightEye.y - leftEye.y, rightEye.x - leftEye.x);
+  const breathe = 1 + Math.sin(now * 0.00042) * 0.035 * amount;
+  const centerAlpha = lerp(0.18, 0.98, amount);
+
+  targetCtx.save();
+  targetCtx.translate(centerX, centerY);
+  targetCtx.rotate(angle);
+  targetCtx.scale(width * breathe, height * breathe);
+
+  const gradient = targetCtx.createRadialGradient(0, 0, 0.02, 0, 0, 1);
+  gradient.addColorStop(0, `rgba(0,0,0,${centerAlpha})`);
+  gradient.addColorStop(0.2, `rgba(0,0,0,${centerAlpha * 0.92})`);
+  gradient.addColorStop(0.48, `rgba(0,0,0,${centerAlpha * 0.42})`);
+  gradient.addColorStop(0.78, `rgba(0,0,0,${centerAlpha * 0.1})`);
+  gradient.addColorStop(1, "rgba(0,0,0,0)");
+
+  targetCtx.fillStyle = gradient;
+  targetCtx.beginPath();
+  targetCtx.arc(0, 0, 1, 0, Math.PI * 2);
+  targetCtx.fill();
+  targetCtx.restore();
+}
+
+function chooseSide4MemoryTone(serial) {
+  const seed = hash1(serial, 381);
+
+  if (seed < 0.28) return Math.floor(lerp(8, 38, hash1(serial, 382)));
+  if (seed < 0.68) return Math.floor(lerp(54, 132, hash1(serial, 383)));
+  return Math.floor(lerp(170, 235, hash1(serial, 384)));
+}
+
+function getSide4Point(points, index) {
+  if (!points || !points[index]) return null;
+  const point = points[index];
+  return isVisiblePosePoint(point) ? point : null;
+}
+
+function averageSide4PosePoints(points, indices) {
+  let x = 0;
+  let y = 0;
+  let count = 0;
+
+  indices.forEach((index) => {
+    const point = getSide4Point(points, index);
+    if (!point) return;
+    x += point.x;
+    y += point.y;
+    count += 1;
+  });
+
+  return count ? { x: x / count, y: y / count } : null;
+}
+
+function getSide4PoseScale(points) {
+  const bounds = calculatePoseBounds(points || []);
+  if (!bounds) return Math.min(canvas.width, canvas.height) * 0.45;
+
+  return Math.max(80, Math.hypot(bounds.maxX - bounds.minX, bounds.maxY - bounds.minY));
+}
+
+function getSide4PoseCenter(points) {
+  const bounds = calculatePoseBounds(points || []);
+  if (!bounds) return null;
+
+  return {
+    x: (bounds.minX + bounds.maxX) * 0.5,
+    y: (bounds.minY + bounds.maxY) * 0.5
+  };
+}
+
+function randomSide4Range(min, max, seed) {
+  return lerp(min, max, clamp(seed, 0, 1));
+}
+
+function distanceBetweenPoints(a, b) {
+  return Math.hypot(a.x - b.x, a.y - b.y);
 }
 
 // -----------------------------------------------------------------------------
@@ -3863,14 +6324,23 @@ function resizeRenderer() {
     memoryCanvas.width = width;
     memoryCanvas.height = height;
   });
+  side4RoomMemoryCanvases.forEach((memoryCanvas) => {
+    memoryCanvas.width = Math.max(1, Math.round(width * SIDE4_ROOM_MEMORY_SCALE));
+    memoryCanvas.height = Math.max(1, Math.round(height * SIDE4_ROOM_MEMORY_SCALE));
+  });
   frameMemoryFilled = 0;
   frameMemoryIndex = 0;
+  releaseSide4RoomMemoryFrames();
+  side4LastRoomMemoryRecordAt = 0;
 
   ctx.imageSmoothingEnabled = true;
   maskCtx.imageSmoothingEnabled = true;
   bodyCtx.imageSmoothingEnabled = true;
   deformedBodyCtx.imageSmoothingEnabled = true;
   frameMemoryContexts.forEach((memoryCtx) => {
+    memoryCtx.imageSmoothingEnabled = true;
+  });
+  side4RoomMemoryContexts.forEach((memoryCtx) => {
     memoryCtx.imageSmoothingEnabled = true;
   });
 }
@@ -3887,6 +6357,21 @@ function drawSourceCover(targetCtx, source, options = {}) {
   targetCtx.globalAlpha = options.alpha ?? 1;
   targetCtx.filter = options.filter || "none";
   targetCtx.drawImage(source, rect.sx, rect.sy, rect.sw, rect.sh, 0, 0, canvas.width, canvas.height);
+  targetCtx.restore();
+}
+
+function drawSourceCoverToCanvas(targetCtx, source, width, height, options = {}) {
+  const sourceWidth = source.videoWidth || source.width;
+  const sourceHeight = source.videoHeight || source.height;
+
+  if (!sourceWidth || !sourceHeight || !width || !height) return;
+
+  const rect = coverSourceRect(sourceWidth, sourceHeight, width, height);
+
+  targetCtx.save();
+  targetCtx.globalAlpha = options.alpha ?? 1;
+  targetCtx.filter = options.filter || "none";
+  targetCtx.drawImage(source, rect.sx, rect.sy, rect.sw, rect.sh, 0, 0, width, height);
   targetCtx.restore();
 }
 
